@@ -155,6 +155,8 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
  *  array(
  *    'function' => 'function_name_to_call' //should be of the signature function_name($url) and should return the embed code
  *    'domain' => 'youtube.com' //the domain that this handler will create embed code for
+ *    'form' => 'function_name_for_form' //function to create settings form (optional)
+ *    'title' => 'Title' //The title of the handler - to be used as the field group header - will be wrapped with t()
  *  );
  */
 function video_embed_get_handlers(){
