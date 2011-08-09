@@ -74,21 +74,15 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
 
  $element['video_url'] = array(
    '#type' => 'textfield',
-   '#title' => 'Video URL',
+   '#title' => $element['#title'],
+   '#description' => $element['#description'],
    '#attached' => array(
      'css' => array(drupal_get_path('module', 'video_embed_field') . '/video_embed_field.form.css'),
      'js' => array(drupal_get_path('module', 'video_embed_field') . '/video_embed_field.form.js'),
     ),
     '#default_value' => isset($items[$delta]['video_url'])?$items[$delta]['video_url']:''
  );
- /*
- $element['embed_code'] = array(
-   '#type' => 'textarea',
-   '#title' => 'Embed Code',
-   '#default_value' => isset($items[$delta]['embed_code'])?$items[$delta]['embed_code']:'',
-   '#description' => 'If set, Video URL will be ignored and this embed code will be used'
- );
- */
+
  return $element;
 }
 
@@ -107,6 +101,10 @@ function video_embed_field_field_formatter_info() {
    'video_embed_field_formatter' => array(
      'label' => t('Video Embed Formatter'),
      'field types' => array('video_embed_field'),
+   ),
+   'video_embed_field_formatter_teaser' => array(
+     'label' => t('Video Embed Formatter - Teaser'),
+     'field types' => array('video_embed_field'),
    )
  );
 }  
@@ -124,9 +122,15 @@ function video_embed_field_field_formatter_prepare_view($entity_type, $entities,
        if(stripos($host, 'www.') > -1){
          $host = substr($host, 4);
        }
-
+       
        if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
-         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url']);
+         //get what type of display it is
+         $display = $displays[$delta]['type'];
+         if($display == 'video_embed_field_formatter_teaser'){
+           $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], TRUE);
+         } else {
+           $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url']);
+         }
        } else {
          $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
        }
@@ -153,7 +157,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
  *  Can be used to add more handlers if needed - from other modules and such
  *  Handler should be an array of the form
  *  array(
- *    'function' => 'function_name_to_call' //should be of the signature function_name($url) and should return the embed code
+ *    'function' => 'function_name_to_call' //should be of the signature function_name($url, $teaser=FALSE) and should return the embed code
  *    'domain' => 'youtube.com' //the domain that this handler will create embed code for
  *    'form' => 'function_name_for_form' //function to create settings form (optional)
  *    'title' => 'Title' //The title of the handler - to be used as the field group header - will be wrapped with t()
@@ -222,10 +226,10 @@ function video_embed_field_get_form(){
 /**
  *  handler for youtube videos
  */
-function video_embed_field_handle_youtube($url){
+function video_embed_field_handle_youtube($url, $teaser=FALSE){
   //get settings
-  $height = variable_get('video_embed_field_youtube_height', 349);
-  $width = variable_get('video_embed_field_youtube_width', 560);
+  $height = $teaser ? variable_get('video_embed_field_youtube_height_teaser', 349) : variable_get('video_embed_field_youtube_height', 349);
+  $width = $teaser ? variable_get('video_embed_field_youtube_width_teaser', 560) : variable_get('video_embed_field_youtube_width', 560);
   $hd = variable_get('video_embed_field_youtube_hd', 1);
   $rel = variable_get('video_embed_field_youtube_rel', 0);
   
@@ -285,7 +289,28 @@ function video_embed_field_handler_youtube_form(){
     '#title' => t('Player Width'),
     '#description' => t('The width of the youtube player, in pixels.  Only enter the number e.g. 560'),
     '#default_value' => variable_get('video_embed_field_youtube_width', 560)
-  );  
+  );
+  $form['teaser'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Teaser Settings'),
+    '#description' => t('Settings which will apply to the teaser version of the player'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  ); 
+  $form['teaser']['video_embed_field_youtube_height_teaser'] = array(
+    '#type' => 'textfield',
+    '#size' => '5',
+    '#title' => t('Player Height'),
+    '#description' => t('The height of the youtube player, in pixels.  Only enter the number e.g. 349'),
+    '#default_value' => variable_get('video_embed_field_youtube_height_teaser', 349)
+  );
+  $form['teaser']['video_embed_field_youtube_width_teaser'] = array(
+    '#type' => 'textfield',
+    '#size' => '5',
+    '#title' => t('Player Width'),
+    '#description' => t('The width of the youtube player, in pixels.  Only enter the number e.g. 560'),
+    '#default_value' => variable_get('video_embed_field_youtube_width_teaser', 560)
+  ); 
   $form['video_embed_field_youtube_hd'] = array(
     '#type' => 'checkbox',
     '#value' => 1, 
@@ -307,10 +332,10 @@ function video_embed_field_handler_youtube_form(){
  *  handler for vimeo videos
  *  Height and width need to be configurable or something I think
  */
-function video_embed_field_handle_vimeo($url){
+function video_embed_field_handle_vimeo($url, $teaser=FALSE){
   //get configuration options
-  $height = variable_get('video_embed_field_vimeo_height', 315);
-  $width = variable_get('video_embed_field_vimeo_width', 560);
+  $height = $teaser ? variable_get('video_embed_field_vimeo_height_teaser', 315) : variable_get('video_embed_field_vimeo_height', 315);
+  $width = $teaser ? variable_get('video_embed_field_vimeo_width_teaser', 560): variable_get('video_embed_field_vimeo_width', 560);
   $color = variable_get('video_embed_field_vimeo_color', '00adef');
 
   $template_start = '<iframe src="http://player.vimeo.com/video/';
@@ -346,7 +371,28 @@ function video_embed_field_handler_vimeo_form(){
     '#title' => t('Player Width'),
     '#description' => t('The width of the vimeo player, in pixels.  Only enter the number e.g. 560'),
     '#default_value' => variable_get('video_embed_field_vimeo_width', 560)
-  );  
+  ); 
+  $form['teaser'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Teaser Settings'),
+    '#description' => t('Settings which will apply to the teaser version of the player'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  );
+  $form['teaser']['video_embed_field_vimeo_height_teaser'] = array(
+    '#type' => 'textfield',
+    '#size' => '5',
+    '#title' => t('Player Height'),
+    '#description' => t('The height of the vimeo player, in pixels.  Only enter the number e.g. 315'),
+    '#default_value' => variable_get('video_embed_field_vimeo_height_teaser', 315)
+  ); 
+  $form['teaser']['video_embed_field_vimeo_width_teaser'] = array(
+    '#type' => 'textfield',
+    '#size' => '5',
+    '#title' => t('Player Width'),
+    '#description' => t('The width of the vimeo player, in pixels.  Only enter the number e.g. 560'),
+    '#default_value' => variable_get('video_embed_field_vimeo_width_teaser', 560)
+  ); 
   $form['video_embed_field_vimeo_color'] = array(
     '#type' => 'select',
     '#options' => array(
