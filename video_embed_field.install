@@ -1,0 +1,40 @@
+<?php 
+
+/**
+ *  Install file for video_embed_field module
+ *  @author jcaldwell
+ */
+ 
+/**
+ *  Implementation of hook_field_schema
+ *  Define the schema for the field
+ */ 
+ 
+function video_embed_field_field_schema($field){
+  switch($field['type']){
+    case 'video_embed_field' :
+      $columns = array(
+        'video_url' => array(
+          'type' => 'varchar',
+          'length' => 512,
+          'default' => ''
+        ),
+        'embed_code' => array(
+          'type' => 'varchar',
+          'length' => 1024,
+          'default' => ''
+        )
+      );
+      $indexes = array();
+    break;
+  }
+  
+  return array(
+    'columns' => $columns,
+    'indexes' => $indexes
+  );
+}
+
+function video_embed_field_uninstall(){
+  //do nothing right now
+}

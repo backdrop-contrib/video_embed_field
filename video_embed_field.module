@@ -1,0 +1,362 @@
+<?php 
+
+/**
+ *  Provides a simple field for easily embedding videos from youtube or vimeo
+ *
+ *  This module is not intended to replace media or video - it does not allow for any local storage of videos, custom players or anything else
+ *  It simply allows users to embed videos from youtube and vimeo - and provides a hook to allow other modules to provide more providers.
+ *
+ *  @author jcaldwell
+ */
+/**
+ *  Implementation of hook_menu
+ *  create out admin page
+ */
+ function video_embed_field_menu(){
+   return array(
+     'admin/config/media/video_embed_field' => array(
+       'title' => 'Configure Video Embed Field',
+       'description' => 'Configuration form for the Video Embed Field, allows one to set player options.',
+       'page callback' => 'drupal_get_form',
+       'page arguments' => array('video_embed_field_get_form'),
+       'access arguments' => array('administer site configuration'),
+     )
+   );
+ }
+
+/**
+ *  Implementation of hook_field_info
+ *  Define the fields we're creating
+ */
+function video_embed_field_field_info(){
+  return array(
+    'video_embed_field' => array(
+      'label' => 'Video Embed',
+      'description' => 'Embed videos from youtube or vimeo',
+      'settings' => array(
+        //no settings currently - not sure what we need
+      ),
+      'instance_settings' => array(
+        'allowed_types' => array('youtube', 'vimeo')
+      ),
+      'default_widget' => 'video_embed_field_widget',
+      'default_formatter' => 'video_embed_field_formatter',
+    )
+  );
+}
+$abilities = (!empty($field['settings']['abilities'])) ? explode("\n", $field['settings']['abilities']) : array();
+/**
+ *  Implementation of hook_field_widget_info
+ *  Define the widget for inputting 
+ */
+function video_embed_field_field_widget_info(){
+ return array(
+   'video_embed_field_widget' => array(
+     'label' => 'Video Embed',
+     'description' => 'Provides a video embed field',
+     'field types' => array('video_embed_field'),
+     'settings' => array(),
+     'behaviors' => array(
+       'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+       'default value' => FIELD_BEHAVIOR_DEFAULT
+     )
+   )
+ );
+}
+/**
+*  implementation of hook_field_widget_form
+*/
+function video_embed_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element){
+ //don't need to check the type right now because we're only defining one
+ $element += array(
+   '#type' => 'video_embed_field_widget'
+ );
+
+ $element['video_url'] = array(
+   '#type' => 'textfield',
+   '#title' => 'Video URL',
+   '#attached' => array(
+     'css' => array(drupal_get_path('module', 'video_embed_field') . '/video_embed_field.form.css'),
+     'js' => array(drupal_get_path('module', 'video_embed_field') . '/video_embed_field.form.js'),
+    ),
+    '#default_value' => isset($items[$delta]['video_url'])?$items[$delta]['video_url']:''
+ );
+ /*
+ $element['embed_code'] = array(
+   '#type' => 'textarea',
+   '#title' => 'Embed Code',
+   '#default_value' => isset($items[$delta]['embed_code'])?$items[$delta]['embed_code']:'',
+   '#description' => 'If set, Video URL will be ignored and this embed code will be used'
+ );
+ */
+ return $element;
+}
+
+function video_embed_fields_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+ foreach ($items as $delta => $item) {
+   //check that its a valid url     
+ }
+}
+
+function video_embed_field_field_is_empty($item, $field){
+ return empty($item);
+}
+
+function video_embed_field_field_formatter_info() {
+ return array(
+   'video_embed_field_formatter' => array(
+     'label' => t('Video Embed Formatter'),
+     'field types' => array('video_embed_field'),
+   )
+ );
+}  
+/**
+*  Implementation of hook_field_formatter_prepare_view
+*  Prepare the view of the video embed - if the embed code doesn't exist, create it using the url
+*/
+function video_embed_field_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays){
+ $handlers = video_embed_get_handlers();
+ foreach($items as $delta=>$item_wrapper){
+   foreach($item_wrapper as $key=>$item){
+     if(!$item['embed_code']){
+       $parts = parse_url($item['video_url']);
+       $host = $parts['host'];
+       if(stripos($host, 'www.') > -1){
+         $host = substr($host, 4);
+       }
+
+       if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
+         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url']);
+       } else {
+         $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
+       }
+     }
+   }
+   
+ }
+}
+
+/**
+*  implementation of hook_field_widget_form
+*/
+function video_embed_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display){
+  $elements = array();
+
+  foreach ($items as $delta => $item) {
+    $element[$delta] = array('#markup' => $item['embed_code']);
+  }
+
+  return $element;
+}
+/**
+ *  Creates a hook that other modules can implement to get handlers - hook_video_embed_handler_info
+ *  Can be used to add more handlers if needed - from other modules and such
+ *  Handler should be an array of the form
+ *  array(
+ *    'function' => 'function_name_to_call' //should be of the signature function_name($url) and should return the embed code
+ *    'domain' => 'youtube.com' //the domain that this handler will create embed code for
+ *  );
+ */
+function video_embed_get_handlers(){
+  $handlers = cache_get('video_embed_field_handlers');
+  
+  if($handlers === FALSE){
+    $available = module_invoke_all('video_embed_handler_info');
+    foreach($available as $handler){
+      $handlers[$handler['domain']] = $handler;
+    }
+    drupal_alter('video_embed_field_handlers', $handlers);
+    cache_set('video_embed_field_handlers', $handlers);
+  } else {
+    $handlers = $handlers->data;
+  }
+  return $handlers;
+}
+
+/**
+ *  Implementation of hook_video_embed_handler_info
+ */
+function video_embed_field_video_embed_handler_info(){
+ return array(
+   'youtube' => array(
+     'domain' => 'youtube.com',
+     'function' => 'video_embed_field_handle_youtube',
+     'form' => 'video_embed_field_handler_youtube_form',
+     'title' => 'Youtube'
+   ), //include short form of youtube for sanity of users
+   'youtu.be' => array(
+     'domain' => 'youtu.be',
+     'function' => 'video_embed_field_handle_youtube'
+   ),
+   'vimeo' => array(
+     'domain' => 'vimeo.com',
+     'function' => 'video_embed_field_handle_vimeo',
+     'form' => 'video_embed_field_handler_vimeo_form',
+     'title' => 'Vimeo'
+   )
+ );
+}
+
+/**
+ *  Create a form from the player configuration options
+ *
+ */
+function video_embed_field_get_form(){
+  $handlers = video_embed_get_handlers();
+  $form = array();
+  foreach($handlers as $domain=>$handler){
+    if(isset($handler['form']) && function_exists($handler['form'])){
+      $form[$handler['title']] = call_user_func($handler['form']);
+      
+      $form[$handler['title']] += array(
+        '#type' => 'fieldset',
+        '#title' => t($handler['title']),
+      );       
+    }
+  }
+  return system_settings_form($form);
+}
+
+/**
+ *  handler for youtube videos
+ */
+function video_embed_field_handle_youtube($url){
+  //get settings
+  $height = variable_get('video_embed_field_youtube_height', 349);
+  $width = variable_get('video_embed_field_youtube_width', 560);
+  $hd = variable_get('video_embed_field_youtube_hd', 1);
+  $rel = variable_get('video_embed_field_youtube_rel', 0);
+  
+  
+  $template_start = '<iframe width="'.$width.'" height="'.$height.'" src="';
+  $template_end = '?hd='.$hd.'&amp;rel='.$rel.'" frameborder="0" allowfullscreen></iframe>';
+  $url_temp = 'http://www.youtube.com/embed/';
+
+  //strip off the http
+  if(stristr($url, 'http://')) {
+    $url = substr($url, 7);
+  } else if(stristr($url, 'https://')){
+    $url = substr($url, 8);
+  }
+
+  $pos = strripos($url, 'v=');
+  if($pos!== FALSE){ 
+    $pos += 2; 
+    $pos2 = stripos($url, '&', $pos);
+  } else { 
+    $pos = strripos($url, '/');
+    if($pos !== FALSE){ 
+      $pos++; 
+      $pos2 = stripos($url, '?', $pos);
+    }
+  }
+  
+  if($pos === FALSE){
+    //we can't figure out the url - just return the url as a link
+    return l($url, $url);
+  } else {
+    if($pos2 > 0){
+      $id = substr($url, $pos, $pos2 - $pos);
+    } else {
+      $id = substr($url, $pos);
+    }
+    return $template_start . $url_temp . $id . $template_end;
+  }
+  
+}  
+/**
+ *  Defines the form elements for the youtube configuration form
+ *  Eventually it might be nice to have these forms be available per instance instead of just global config
+ */
+function video_embed_field_handler_youtube_form(){
+  $form = array();
+  $form['video_embed_field_youtube_height'] = array(
+    '#type' => 'textfield',
+    '#size' => '5',
+    '#title' => t('Player Height'),
+    '#description' => t('The height of the youtube player, in pixels.  Only enter the number e.g. 349'),
+    '#default_value' => variable_get('video_embed_field_youtube_height', 349)
+  );
+  $form['video_embed_field_youtube_width'] = array(
+    '#type' => 'textfield',
+    '#size' => '5',
+    '#title' => t('Player Width'),
+    '#description' => t('The width of the youtube player, in pixels.  Only enter the number e.g. 560'),
+    '#default_value' => variable_get('video_embed_field_youtube_width', 560)
+  );  
+  $form['video_embed_field_youtube_hd'] = array(
+    '#type' => 'checkbox',
+    '#value' => 1, 
+    '#title' => t('Use HD'),
+    '#description' => t('Attempt to play the video in HD if available.'),
+    '#default_value' => variable_get('video_embed_field_youtube_hd', 1)
+  );
+  $form['video_embed_field_youtube_rel'] = array(
+    '#type' => 'checkbox',
+    '#return_value' => 1, 
+    '#title' => t('Show related videos'),
+    '#description' => t('Show related videos after the video is finished playing.'),
+    '#default_value' => variable_get('video_embed_field_youtube_rel', 0)
+  );
+  return $form;
+}
+
+/**
+ *  handler for vimeo videos
+ *  Height and width need to be configurable or something I think
+ */
+function video_embed_field_handle_vimeo($url){
+  //get configuration options
+  $height = variable_get('video_embed_field_vimeo_height', 315);
+  $width = variable_get('video_embed_field_vimeo_width', 560);
+  $color = variable_get('video_embed_field_vimeo_color', '00adef');
+
+  $template_start = '<iframe src="http://player.vimeo.com/video/';
+  $template_end = '?portrait=0&amp;color='.$color.'" frameborder="0" height="'.$height.'" width="'.$width.'"></iframe>';
+  
+  $pos = strripos($url, '/');
+  if($pos === FALSE){
+    //we can't figure out the url - just return the url as a link
+    return l($url, $url);
+  } else {
+    $pos+=1;
+    $id = substr($url, $pos);
+    return $template_start . $id . $template_end;
+  }
+  
+}
+
+/**
+ *  Defines the form elements for the vimeo configuration form
+ */
+function video_embed_field_handler_vimeo_form(){
+  $form = array();
+  $form['video_embed_field_vimeo_height'] = array(
+    '#type' => 'textfield',
+    '#size' => '5',
+    '#title' => t('Player Height'),
+    '#description' => t('The height of the vimeo player, in pixels.  Only enter the number e.g. 315'),
+    '#default_value' => variable_get('video_embed_field_vimeo_height', 315)
+  );
+  $form['video_embed_field_vimeo_width'] = array(
+    '#type' => 'textfield',
+    '#size' => '5',
+    '#title' => t('Player Width'),
+    '#description' => t('The width of the vimeo player, in pixels.  Only enter the number e.g. 560'),
+    '#default_value' => variable_get('video_embed_field_vimeo_width', 560)
+  );  
+  $form['video_embed_field_vimeo_color'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      '00adef' => t('Blue'),
+      'ff9933' => t('Orange'),
+      'c9ff23' => t('Lime'),
+      'ff0179' => t('Fuschia'),
+      'ffffff' => t('White') 
+    ), 
+    '#title' => t('Player Color'),
+    '#description' => t('The color to use on the vimeo player.'),
+    '#default_value' => variable_get('video_embed_field_vimeo_color', '00adef')
+  );
+  return $form;
+}
