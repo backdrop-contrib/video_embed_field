@@ -76,24 +76,50 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
    '#type' => 'textfield',
    '#title' => $element['#title'],
    '#description' => $element['#description'],
-   '#attached' => array(
-     'css' => array(drupal_get_path('module', 'video_embed_field') . '/video_embed_field.form.css'),
-     'js' => array(drupal_get_path('module', 'video_embed_field') . '/video_embed_field.form.js'),
-    ),
-    '#default_value' => isset($items[$delta]['video_url'])?$items[$delta]['video_url']:''
+   '#attributes' => array('class' => array('video_embed_url')),
+   '#attached' => array( 
+     'css' => array( 
+        drupal_get_path('module', 'video_embed_field') .'/video_embed_field.form.css'
+      )
+   ),
+   '#default_value' => isset($items[$delta]['video_url'])?$items[$delta]['video_url']:''
  );
 
  return $element;
 }
 
-function video_embed_fields_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+function video_embed_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
  foreach ($items as $delta => $item) {
-   //check that its a valid url     
+   if(!empty($item['video_url'])){
+     $parts = parse_url($item['video_url']);
+     if(!$parts || !isset($parts['host'])){
+       $errors[$field['field_name']][$langcode][$delta][] = array(
+         'error' => t('Invalid Url'), 
+         'message' => t('Video: Invalid Video URL.', array('%name' => $instance['label'])),
+       );
+     } else {
+       $host = $parts['host'];
+       if(stripos($host, 'www.') > -1){
+         $host = substr($host, 4);
+       }
+       $handlers = video_embed_get_handlers();
+       if(!isset($handlers[$host]['function']) || !function_exists($handlers[$host]['function'])){
+         $errors[$field['field_name']][$langcode][$delta][] = array(
+           'error' => t('Unsupported Video Provider'), 
+           'message' => t('%name: This video provider is not currently supported.', array('%name' => $instance['label'])),
+         );
+       }
+     }
+   }
  }
 }
 
+/**
+ *  Implementation of hook_field_is_empty
+ *  Determine whether the field is empty
+ */
 function video_embed_field_field_is_empty($item, $field){
- return empty($item);
+  return empty($item) || empty($item['video_url']) || $item['video_url'] === '';
 }
 
 function video_embed_field_field_formatter_info() {
@@ -144,7 +170,7 @@ function video_embed_field_field_formatter_prepare_view($entity_type, $entities,
 *  implementation of hook_field_widget_form
 */
 function video_embed_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display){
-  $elements = array();
+  $element = array();
 
   foreach ($items as $delta => $item) {
     $element[$delta] = array('#markup' => $item['embed_code']);
@@ -235,7 +261,7 @@ function video_embed_field_handle_youtube($url, $teaser=FALSE){
   
   
   $template_start = '<iframe width="'.$width.'" height="'.$height.'" src="';
-  $template_end = '?hd='.$hd.'&amp;rel='.$rel.'" frameborder="0" allowfullscreen></iframe>';
+  $template_end = '?hd='.$hd.'&amp;rel='.$rel.'&amp;wmode=opaque" frameborder="0" allowfullscreen></iframe>';
   $url_temp = 'http://www.youtube.com/embed/';
 
   //strip off the http
