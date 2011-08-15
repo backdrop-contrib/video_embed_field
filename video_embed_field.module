@@ -144,6 +144,12 @@ function video_embed_field_field_formatter_prepare_view($entity_type, $entities,
    foreach($item_wrapper as $key=>$item){
      if(!$item['embed_code']){
        $parts = parse_url($item['video_url']);
+       //make sure bad data won't mess everything up
+       if(!isset($parts['host'])){
+         $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
+         return;
+       }
+       
        $host = $parts['host'];
        if(stripos($host, 'www.') > -1){
          $host = substr($host, 4);
