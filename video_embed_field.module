@@ -218,7 +218,21 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
   $element = array();
 
   foreach ($items as $delta => $item) {
-    $element[$delta] = array('#markup' => $item['embed_code']);
+    if(isset($item['description']) && $item['description']){
+      $description = array(
+        '#prefix' => '<div class="video-embed-description">',
+        '#markup' => $item['description'],
+        '#suffix' => '</div>',
+      );
+    } else {
+      $description = array();
+    }
+    $element[$delta] = array(
+      array(
+        '#markup' => $item['embed_code']
+      ),
+      $description      
+    );
   }
 
   return $element;
