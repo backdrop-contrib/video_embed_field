@@ -37,14 +37,35 @@ function video_embed_field_field_info(){
         //no settings currently - not sure what we need
       ),
       'instance_settings' => array(
-        'allowed_types' => array('youtube', 'vimeo')
+        'allowed_types' => array('youtube', 'vimeo'),
+        'description_field' => 0,
       ),
       'default_widget' => 'video_embed_field_widget',
       'default_formatter' => 'video_embed_field_formatter',
     )
   );
 }
+
+/**
+ * Implements hook_field_instance_settings_form().
+ */
+function video_embed_field_field_instance_settings_form($field, $instance) {
+  $settings = $instance['settings'];
+  
+  $form['description_field'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable <em>Description</em> field'),
+    '#default_value' => isset($settings['description_field']) ? $settings['description_field'] : '',
+    '#description' => t('The description field allows users to enter a description about the video.'),
+    '#parents' => array('instance', 'settings', 'description_field'),
+    '#weight' => 11,
+  );
+  
+  return $form;
+}
+
 $abilities = (!empty($field['settings']['abilities'])) ? explode("\n", $field['settings']['abilities']) : array();
+
 /**
  *  Implementation of hook_field_widget_info
  *  Define the widget for inputting 
@@ -85,6 +106,16 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
    '#default_value' => isset($items[$delta]['video_url'])?$items[$delta]['video_url']:'',
    '#required' => $element['#required']
  );
+ 
+ // Add the description field if enabled.
+ if (!empty($instance['settings']['description_field'])) {
+  $element['description'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Description'),
+    '#default_value' => isset($items[$delta]['description']) ? $items[$delta]['description'] : '',
+    '#description' => t('The description which may be used as a label.'),
+  );
+ }
 
  return $element;
 }

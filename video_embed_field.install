@@ -23,7 +23,11 @@ function video_embed_field_field_schema($field){
           'type' => 'varchar',
           'length' => 1024,
           'default' => ''
-        )
+        ),
+        'description' => array(
+          'type' => 'text',
+          'not null' => FALSE,
+        ),
       );
       $indexes = array();
     break;
@@ -36,5 +40,36 @@ function video_embed_field_field_schema($field){
 }
 
 function video_embed_field_uninstall(){
-  //do nothing right now
+  //do nothing right now - should eventually remove all the variables
+  
+  
+}
+
+/**
+ *  Add an optional description form
+ */
+function video_embed_field_update_7000() {
+  // Get the list of fields of type 'video_embed_field'.
+  $video_embed_fields = array();
+  foreach (field_info_fields() as $field_name => $field_info) {
+    if ($field_info['type'] == 'video_embed_field') {
+      $video_embed_fields[$field_name] = field_read_field($field_name);
+    }
+  }
+  
+  foreach ($video_embed_fields as $field) {
+    if ($field['deleted']) {
+      $table = "field_deleted_data_{$field['id']}";
+      $revision_table = "field_deleted_revision_{$field['id']}";
+    }
+    else {
+      $table = "field_data_{$field['field_name']}";
+      $revision_table = "field_revision_{$field['field_name']}";
+    }
+    $column = $field['field_name'] . '_' . 'description';
+    db_add_field($table, $column, array('type' => 'text', 'not null' => FALSE));
+    db_add_field($revision_table, $column, array('type' => 'text', 'not null' => FALSE));
+  }
+  
+  return t('Additional columns added.');
 }
