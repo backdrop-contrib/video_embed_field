@@ -176,35 +176,34 @@ function video_embed_field_field_formatter_info() {
 */
 function video_embed_field_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays){
  $handlers = video_embed_get_handlers();
+ 
  foreach($items as $delta=>$item_wrapper){
    foreach($item_wrapper as $key=>$item){
-     if(!$item['embed_code']){
-       if(!stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
-         $item['video_url'] = 'http://' . $item['video_url'];
-       }
-       $parts = parse_url($item['video_url']);
-       //make sure bad data won't mess everything up
-       if(!isset($parts['host'])){
-         $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
-         return;
-       }
-       
-       $host = $parts['host'];
-       if(stripos($host, 'www.') > -1){
-         $host = substr($host, 4);
-       }
-       
-       if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
-         //get what type of display it is
-         $display = $displays[$delta]['type'];
-         if($display == 'video_embed_field_formatter_teaser'){
-           $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], TRUE);
-         } else {
-           $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url']);
-         }
+     if(!stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
+       $item['video_url'] = 'http://' . $item['video_url'];
+     }
+     $parts = parse_url($item['video_url']);
+     //make sure bad data won't mess everything up
+     if(!isset($parts['host'])){
+       $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
+       return;
+     }
+     
+     $host = $parts['host'];
+     if(stripos($host, 'www.') > -1){
+       $host = substr($host, 4);
+     }
+     
+     if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
+       //get what type of display it is
+       $display = $displays[$delta]['type'];
+       if($display == 'video_embed_field_formatter_teaser'){
+         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], TRUE);
        } else {
-         $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
+         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url']);
        }
+     } else {
+       $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
      }
    }
    
@@ -312,6 +311,7 @@ function video_embed_field_get_form(){
  *  handler for youtube videos
  */
 function video_embed_field_handle_youtube($url, $teaser=FALSE){
+  drupal_set_message('<pre>'.print_r(($teaser?'TRUE' : 'FALSE'), true).'</pre>');
   //get settings
   $height = $teaser ? variable_get('video_embed_field_youtube_height_teaser', 349) : variable_get('video_embed_field_youtube_height', 349);
   $width = $teaser ? variable_get('video_embed_field_youtube_width_teaser', 560) : variable_get('video_embed_field_youtube_width', 560);
