@@ -92,6 +92,10 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
 function video_embed_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
  foreach ($items as $delta => $item) {
    if(!empty($item['video_url'])){
+     if(stristr($item['video_url'], '.') && !stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
+       $item['video_url'] = 'http://' . $item['video_url'];
+     }
+   
      $parts = parse_url($item['video_url']);
      if(!$parts || !isset($parts['host'])){
        $errors[$field['field_name']][$langcode][$delta][] = array(
@@ -144,6 +148,9 @@ function video_embed_field_field_formatter_prepare_view($entity_type, $entities,
  foreach($items as $delta=>$item_wrapper){
    foreach($item_wrapper as $key=>$item){
      if(!$item['embed_code']){
+       if(!stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
+         $item['video_url'] = 'http://' . $item['video_url'];
+       }
        $parts = parse_url($item['video_url']);
        //make sure bad data won't mess everything up
        if(!isset($parts['host'])){
