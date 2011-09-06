@@ -311,7 +311,6 @@ function video_embed_field_get_form(){
  *  handler for youtube videos
  */
 function video_embed_field_handle_youtube($url, $teaser=FALSE){
-  drupal_set_message('<pre>'.print_r(($teaser?'TRUE' : 'FALSE'), true).'</pre>');
   //get settings
   $height = $teaser ? variable_get('video_embed_field_youtube_height_teaser', 349) : variable_get('video_embed_field_youtube_height', 349);
   $width = $teaser ? variable_get('video_embed_field_youtube_width_teaser', 560) : variable_get('video_embed_field_youtube_width', 560);
