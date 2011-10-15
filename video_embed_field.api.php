@@ -9,7 +9,8 @@
   *  Can be used to add more handlers if needed - from other modules and such
   *  Handler should be an array of the form
   *  array(
-  *    'function' => 'function_name_to_call' //should be of the signature function_name($url, $teaser=FALSE) and should return the embed code
+  *    'function' => 'function_name_to_call' //should be of the signature function_name($url, $settings, $type = 'video|teaser|image', $image_size='small|medium|large') and should return the embed code
+  *    'defaults' => array() //The default settings for the module, used for both the form and the callback function
   *    'domain' => 'youtube.com' //the domain that this handler will create embed code for
   *    'form' => 'function_name_for_form' //function to create settings form (optional)
   *    'title' => 'Title' //The title of the handler - to be used as the field group header - will be wrapped with t()
