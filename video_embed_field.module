@@ -10,22 +10,6 @@
  */
  
 /**
- *  Implementation of hook_menu
- *  create out admin page
- */
-function video_embed_field_menu(){
-  return array(
-    'admin/config/media/video_embed_field' => array(
-      'title' => 'Video Embed Field',
-      'description' => 'Configuration form for the Video Embed Field, allows one to set player options.',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('video_embed_field_get_form'),
-      'access arguments' => array('administer site configuration'),
-    )
-  );
-}
-
-/**
  *  Implementation of hook_field_info
  *  Define the fields we're creating
  */
