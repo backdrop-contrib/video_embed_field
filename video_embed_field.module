@@ -478,7 +478,7 @@ function video_embed_field_handle_vimeo($url, $settings, $type = 'video', $image
     $id = substr($url, $pos);
   }
   
-  if ($type == 'thumbnail') {
+  if ($type == 'image') {
     $return = file_get_contents('http://vimeo.com/api/v2/video/'.$id.'.php');
     $return = unserialize($return);
     $video = current($return);
@@ -495,7 +495,7 @@ function video_embed_field_handle_vimeo($url, $settings, $type = 'video', $image
   } else {
     //get configuration options
     $teaser = $type == 'teaser';
-    $height = $teaser ? $settings['teaser_height'] : $settinges['height'];
+    $height = $teaser ? $settings['teaser_height'] : $settings['height'];
     $width = $teaser ? $settings['teaser_width'] : $settings['width'];
     $color = $settings['color'];
     $autoplay = $settings['autoplay'];
