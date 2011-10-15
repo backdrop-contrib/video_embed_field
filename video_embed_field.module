@@ -219,6 +219,8 @@ function video_embed_field_field_formatter_prepare_view($entity_type, $entities,
         $display = $displays[$delta]['type'];
   
         $settings = $instances[$delta]['settings']['playback_settings'][$handlers[$host]['title']];
+        $settings = array_merge($handlers[$host]['defaults'], $settings);
+        
         if($display == 'video_embed_field_formatter_teaser'){
           $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'teaser');
         } else if ($display == 'video_embed_field_formatter_image_small') {
@@ -292,6 +294,64 @@ function video_embed_get_handlers(){
 }
 
 /**
+ *  Adds a formatter for inserting directly into content
+ */
+
+/**
+ * Implements hook_filter_info().
+ */
+function video_embed_field_filter_info() {
+  $filters['video_embed_field'] = array(
+    'title' => t('Video Embedding'),
+    'description' => t('Replaces [VIDEO::http://www.youtube.com/watch?v=someVideoID] tags with embedded videos.'),
+    'process callback'  => 'video_embed_field_filter_process',
+  );
+  
+  return $filters;
+}
+
+/**
+ * Video Embed Field filter process callback
+ */
+function video_embed_field_filter_process($text, $filter, $format) {
+  preg_match_all('/ \[VIDEO:: ( [^\[\]]+ )* \] /x', $text, $matches);
+  
+  $tag_match = (array) array_unique($matches[1]);
+  $handlers = video_embed_get_handlers();
+  
+  foreach($tag_match as $video_url) {
+    // Add http if needed
+    if (!stristr($video_url, 'http://') && !stristr($video_url, 'https://')) {
+      $video_url = 'http://' . $video_url;
+    }
+    
+    $parts = parse_url($video_url);
+    // Make sure bad data won't mess everything up
+    if (!isset($parts['host'])) {
+      $embed_code = l($video_url, $video_url);
+    }
+    else {
+      $host = $parts['host'];
+      if (stripos($host, 'www.') > -1) {
+        $host = substr($host, 4);
+      }
+      
+      if (isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])) {
+        $defaults = $handlers[$host]['defaults']; //TODO We need a way for people to configure how an embed works
+        $embed_code = call_user_func($handlers[$host]['function'], $video_url, $defaults);
+      }
+      else {
+        $embed_code = l($video_url, $video_url);
+      }
+    }
+    
+    $text = str_replace('[VIDEO::' . $video_url . ']', $embed_code, $text);
+  }
+  
+  return $text;
+}
+
+/**
  *  Implementation of hook_video_embed_handler_info
  */
 function video_embed_field_video_embed_handler_info(){
@@ -299,21 +359,48 @@ function video_embed_field_video_embed_handler_info(){
     'youtube' => array(
       'domain' => 'youtube.com',
       'function' => 'video_embed_field_handle_youtube',
+      'defaults' => array(
+        'height' => 349,
+        'width' => 560,
+        'teaser_height' => 349,
+        'teaser_width' => 560,
+        'autoplay' => 0,
+        'hd' => 1,
+        'rel' => 0,
+      ),
       'form' => 'video_embed_field_handler_youtube_form',
       'title' => 'Youtube'
     ), //include short form of youtube for sanity of users
     'youtu.be' => array(
       'domain' => 'youtu.be',
+      'defaults' => array(
+        'height' => 349,
+        'width' => 560,
+        'teaser_height' => 349,
+        'teaser_width' => 560,
+        'autoplay' => 0,
+        'hd' => 1,
+        'rel' => 0,
+      ),
       'function' => 'video_embed_field_handle_youtube'
     ),
     'vimeo' => array(
       'domain' => 'vimeo.com',
       'function' => 'video_embed_field_handle_vimeo',
+      'defaults' => array(
+        'height' => 315,
+        'width' => 560,
+        'teaser_height' => 315,
+        'teaser_width' => 560,
+        'color' => '00adef',
+        'autoplay' => 0
+      ),
       'form' => 'video_embed_field_handler_vimeo_form',
       'title' => 'Vimeo'
     )
   );
 }
+
 
 /**
  *  Create a form from the player configuration options
@@ -325,6 +412,8 @@ function video_embed_field_get_form($defaults){
   foreach($handlers as $domain=>$handler){
     if(isset($handler['form']) && function_exists($handler['form'])){
       $handler_defaults = isset($defaults[$handler['title']]) ? $defaults[$handler['title']] : array();
+      $handler_defaults = array_merge($handler['defaults'], $handler_defaults);
+      
       $form[$handler['title']] = call_user_func($handler['form'], $handler_defaults);
       
       $form[$handler['title']] += array(
