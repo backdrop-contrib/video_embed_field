@@ -355,33 +355,29 @@ function video_embed_field_filter_process($text, $filter, $format) {
  *  Implementation of hook_video_embed_handler_info
  */
 function video_embed_field_video_embed_handler_info(){
+  $ytdefaults = array(
+    'height' => 349,
+    'width' => 560,
+    'teaser_height' => 349,
+    'teaser_width' => 560,
+    'autoplay' => 0,
+    'hd' => 1,
+    'rel' => 0,
+    'autohide' => 2,
+    'showinfo' => 1,
+    'theme' => 'dark'
+  );
   return array(
     'youtube' => array(
       'domain' => 'youtube.com',
       'function' => 'video_embed_field_handle_youtube',
-      'defaults' => array(
-        'height' => 349,
-        'width' => 560,
-        'teaser_height' => 349,
-        'teaser_width' => 560,
-        'autoplay' => 0,
-        'hd' => 1,
-        'rel' => 0,
-      ),
+      'defaults' => $ytdefaults,
       'form' => 'video_embed_field_handler_youtube_form',
       'title' => 'Youtube'
     ), //include short form of youtube for sanity of users
     'youtu.be' => array(
       'domain' => 'youtu.be',
-      'defaults' => array(
-        'height' => 349,
-        'width' => 560,
-        'teaser_height' => 349,
-        'teaser_width' => 560,
-        'autoplay' => 0,
-        'hd' => 1,
-        'rel' => 0,
-      ),
+      'defaults' => $ytdefaults,
       'function' => 'video_embed_field_handle_youtube'
     ),
     'vimeo' => array(
@@ -475,9 +471,12 @@ function video_embed_field_handle_youtube($url, $settings, $type='video', $image
     $hd = $settings['hd'];
     $rel = $settings['rel'];
     $autoplay = $settings['autoplay'];
+    $autohide = $settings['autohide']; 
+    $showinfo = $settings['showinfo'];
+    $theme = $settings['theme'];
     
     $template_start = '<iframe width="'.$width.'" height="'.$height.'" src="';
-    $template_end = '?hd='.$hd.'&amp;rel='.$rel.'&amp;wmode=opaque&amp;autoplay='.$autoplay.'" frameborder="0" allowfullscreen></iframe>';
+    $template_end = '?hd='.$hd.'&amp;rel='.$rel.'&amp;wmode=opaque&amp;autoplay='.$autoplay.'&amp;theme='.$theme.'&amp;autohide='.$autohide.'&amp;showinfo='.$showinfo.'" frameborder="0" allowfullscreen></iframe>';
     $url_temp = 'http://www.youtube.com/embed/';
 
     return $template_start . $url_temp . $id . $template_end;
@@ -489,19 +488,6 @@ function video_embed_field_handle_youtube($url, $settings, $type='video', $image
  *  Eventually it might be nice to have these forms be available per instance instead of just global config
  */
 function video_embed_field_handler_youtube_form($defaults){
-  //use base defaults to ensure that each setting has some default value - $defaults, the user entered values will override
-  $base_defaults = array(
-    'height' => 349,
-    'width' => 560,
-    'teaser_height' => 349,
-    'teaser_width' => 560,
-    'autoplay' => 0,
-    'hd' => 1,
-    'rel' => 0,
-  );
-
-  $defaults = array_merge($base_defaults, $defaults);
-
   $form = array();
 
   $form['height'] = array(
@@ -532,6 +518,17 @@ function video_embed_field_handler_youtube_form($defaults){
     '#description' => t('The width of the youtube player, in pixels.  Only enter the number e.g. 560'),
     '#default_value' => $defaults['teaser_width'],
   );
+  
+  $form['theme'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      'dark' => t('Dark'),
+      'light' => t('Light'),
+    ), 
+    '#title' => t('Player theme'),
+    '#default_value' => $defaults['theme'],
+  );
+  
   $form['autoplay'] = array(
     '#type' => 'checkbox',
     '#title' => t('Autoplay'),
@@ -550,6 +547,25 @@ function video_embed_field_handler_youtube_form($defaults){
     '#description' => t('Show related videos after the video is finished playing.'),
     '#default_value' => $defaults['rel'],
   );
+  $form['showinfo'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show info'),
+    '#description' => t('Display information like the video title and rating before the video starts playing.'),
+    '#default_value' => $defaults['showinfo'],
+  );
+  
+  $form['autohide'] = array(
+    '#type' => 'radios',
+    '#options' => array(
+      0 => t('The video progress bar and player controls will be visible throughout the video.'),
+      1 => t('Automatically slide the video progress bar and the player controls out of view a couple of seconds after the video starts playing. They will only reappear if the user moves her mouse over the video player or presses a keyboard key.'),
+      2 => t('The video progress bar will fade out but the player controls (play button, volume control, etc.) remain visible.'),
+    ), 
+    '#title' => t('Autohide progress bar and the player controls'),
+    '#description' => t('Controls the autohide behavior of the youtube player controls.'),
+    '#default_value' => $defaults['autohide'],
+  );
+
   return $form;
 }
 
