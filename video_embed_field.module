@@ -6,23 +6,24 @@
  *  This module is not intended to replace media or video - it does not allow for any local storage of videos, custom players or anything else
  *  It simply allows users to embed videos from youtube and vimeo - and provides a hook to allow other modules to provide more providers.
  *
- *  @author jcaldwell
+ *  @author jcaldwell aka jec006
  */
+ 
 /**
  *  Implementation of hook_menu
  *  create out admin page
  */
- function video_embed_field_menu(){
-   return array(
-     'admin/config/media/video_embed_field' => array(
-       'title' => 'Video Embed Field',
-       'description' => 'Configuration form for the Video Embed Field, allows one to set player options.',
-       'page callback' => 'drupal_get_form',
-       'page arguments' => array('video_embed_field_get_form'),
-       'access arguments' => array('administer site configuration'),
-     )
-   );
- }
+function video_embed_field_menu(){
+  return array(
+    'admin/config/media/video_embed_field' => array(
+      'title' => 'Video Embed Field',
+      'description' => 'Configuration form for the Video Embed Field, allows one to set player options.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('video_embed_field_get_form'),
+      'access arguments' => array('administer site configuration'),
+    )
+  );
+}
 
 /**
  *  Implementation of hook_field_info
@@ -76,83 +77,84 @@ function video_embed_field_field_instance_settings_form($field, $instance) {
  *  Define the widget for inputting 
  */
 function video_embed_field_field_widget_info(){
- return array(
-   'video_embed_field_widget' => array(
-     'label' => 'Video Embed',
-     'description' => 'Provides a video embed field',
-     'field types' => array('video_embed_field'),
-     'settings' => array(),
-     'behaviors' => array(
-       'multiple values' => FIELD_BEHAVIOR_DEFAULT,
-       'default value' => FIELD_BEHAVIOR_DEFAULT
-     )
-   )
- );
+  return array(
+    'video_embed_field_widget' => array(
+      'label' => 'Video Embed',
+      'description' => 'Provides a video embed field',
+      'field types' => array('video_embed_field'),
+      'settings' => array(),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+        'default value' => FIELD_BEHAVIOR_DEFAULT
+      ),
+    ),
+  );
 }
-/**
-*  implementation of hook_field_widget_form
-*/
-function video_embed_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element){
- //don't need to check the type right now because we're only defining one
- $element += array(
-   '#type' => 'video_embed_field_widget'
- );
 
- $element['video_url'] = array(
-   '#type' => 'textfield',
-   '#title' => $element['#title'],
-   '#description' => $element['#description'],
-   '#attributes' => array('class' => array('video_embed_url')),
-   '#attached' => array( 
-     'css' => array( 
+/**
+ *  implementation of hook_field_widget_form
+ */
+function video_embed_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element){
+  //don't need to check the type right now because we're only defining one
+  $element += array(
+    '#type' => 'video_embed_field_widget'
+  );
+  
+  $element['video_url'] = array(
+    '#type' => 'textfield',
+    '#title' => $element['#title'],
+    '#description' => $element['#description'],
+    '#attributes' => array('class' => array('video_embed_url')),
+    '#attached' => array( 
+      'css' => array( 
         drupal_get_path('module', 'video_embed_field') .'/video_embed_field.form.css'
       )
-   ),
-   '#default_value' => isset($items[$delta]['video_url'])?$items[$delta]['video_url']:'',
-   '#required' => $element['#required']
- );
- 
- // Add the description field if enabled.
- if (!empty($instance['settings']['description_field'])) {
-  $element['description'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Description'),
-    '#default_value' => isset($items[$delta]['description']) ? $items[$delta]['description'] : '',
-    '#description' => t('The description which may be used as a label.'),
+    ),
+    '#default_value' => isset($items[$delta]['video_url'])?$items[$delta]['video_url']:'',
+    '#required' => $element['#required']
   );
- }
+  
+  // Add the description field if enabled.
+  if (!empty($instance['settings']['description_field'])) {
+    $element['description'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Description'),
+      '#default_value' => isset($items[$delta]['description']) ? $items[$delta]['description'] : '',
+      '#description' => t('The description which may be used as a label.'),
+    );
+  }
 
- return $element;
+  return $element;
 }
 
 function video_embed_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
- foreach ($items as $delta => $item) {
-   if(!empty($item['video_url'])){
-     if(stristr($item['video_url'], '.') && !stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
-       $item['video_url'] = 'http://' . $item['video_url'];
-     }
-   
-     $parts = parse_url($item['video_url']);
-     if(!$parts || !isset($parts['host'])){
-       $errors[$field['field_name']][$langcode][$delta][] = array(
-         'error' => t('Invalid Url'), 
-         'message' => t('Video: Invalid Video URL.', array('%name' => $instance['label'])),
-       );
-     } else {
-       $host = $parts['host'];
-       if(stripos($host, 'www.') > -1){
-         $host = substr($host, 4);
-       }
-       $handlers = video_embed_get_handlers();
-       if(!isset($handlers[$host]['function']) || !function_exists($handlers[$host]['function'])){
-         $errors[$field['field_name']][$langcode][$delta][] = array(
-           'error' => t('Unsupported Video Provider'), 
-           'message' => t('%name: This video provider is not currently supported.', array('%name' => $instance['label'])),
-         );
-       }
-     }
-   }
- }
+  foreach ($items as $delta => $item) {
+    if(!empty($item['video_url'])){
+      if(stristr($item['video_url'], '.') && !stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
+        $item['video_url'] = 'http://' . $item['video_url'];
+      }
+    
+      $parts = parse_url($item['video_url']);
+      if(!$parts || !isset($parts['host'])){
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => t('Invalid Url'), 
+          'message' => t('Video: Invalid Video URL.', array('%name' => $instance['label'])),
+        );
+      } else {
+        $host = $parts['host'];
+        if(stripos($host, 'www.') > -1){
+          $host = substr($host, 4);
+        }
+        $handlers = video_embed_get_handlers();
+        if(!isset($handlers[$host]['function']) || !function_exists($handlers[$host]['function'])){
+          $errors[$field['field_name']][$langcode][$delta][] = array(
+            'error' => t('Unsupported Video Provider'), 
+            'message' => t('%name: This video provider is not currently supported.', array('%name' => $instance['label'])),
+          );
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -164,63 +166,64 @@ function video_embed_field_field_is_empty($item, $field){
 }
 
 function video_embed_field_field_formatter_info() {
- return array(
-   'video_embed_field_formatter' => array(
-     'label' => t('Video Embed Formatter'),
-     'field types' => array('video_embed_field'),
-   ),
-   'video_embed_field_formatter_teaser' => array(
-     'label' => t('Video Embed Formatter - Teaser'),
-     'field types' => array('video_embed_field'),
-   ),
-   'video_embed_field_formatter_thumbnail' => array(
-     'label' => t('Video Embed Formatter - Thumbnail'),
-     'field types' => array('video_embed_field'),
-   ),
- );
-}  
+  return array(
+    'video_embed_field_formatter' => array(
+      'label' => t('Video Embed Formatter'),
+      'field types' => array('video_embed_field'),
+    ),
+    'video_embed_field_formatter_teaser' => array(
+      'label' => t('Video Embed Formatter - Teaser'),
+      'field types' => array('video_embed_field'),
+    ),
+    'video_embed_field_formatter_thumbnail' => array(
+      'label' => t('Video Embed Formatter - Thumbnail'),
+      'field types' => array('video_embed_field'),
+    ),
+  );
+}
+  
 /**
 *  Implementation of hook_field_formatter_prepare_view
 *  Prepare the view of the video embed - if the embed code doesn't exist, create it using the url
 */
 function video_embed_field_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays){
- $handlers = video_embed_get_handlers();
- 
- foreach($items as $delta=>$item_wrapper){
-   foreach($item_wrapper as $key=>$item){
-     if(!stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
-       $item['video_url'] = 'http://' . $item['video_url'];
-     }
-     $parts = parse_url($item['video_url']);
-     //make sure bad data won't mess everything up
-     if(!isset($parts['host'])){
-       $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
-       return;
-     }
-     
-     $host = $parts['host'];
-     if(stripos($host, 'www.') > -1){
-       $host = substr($host, 4);
-     }
-     
-     if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
-       //get what type of display it is
-       $display = $displays[$delta]['type'];
-
-       $settings = $instances[$delta]['settings']['playback_settings'][$handlers[$host]['title']];
-       if($display == 'video_embed_field_formatter_teaser'){
-         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'teaser');
-       } else if ($display == 'video_embed_field_formatter_thumbnail') {
-         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'thumbnail');
-       } else {
-         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings);
-       }
-     } else {
-       $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
-     }
-   }
-   
- }
+  $handlers = video_embed_get_handlers();
+  
+  foreach($items as $delta=>$item_wrapper){
+    foreach($item_wrapper as $key=>$item){
+      if(!stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
+        $item['video_url'] = 'http://' . $item['video_url'];
+      }
+      $parts = parse_url($item['video_url']);
+      //make sure bad data won't mess everything up
+      if(!isset($parts['host'])){
+        $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
+        return;
+      }
+      
+      $host = $parts['host'];
+      if(stripos($host, 'www.') > -1){
+        $host = substr($host, 4);
+      }
+      
+      if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
+        //get what type of display it is
+        $display = $displays[$delta]['type'];
+  
+        $settings = $instances[$delta]['settings']['playback_settings'][$handlers[$host]['title']];
+        if($display == 'video_embed_field_formatter_teaser'){
+          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'teaser');
+        } else if ($display == 'video_embed_field_formatter_thumbnail') {
+          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'thumbnail');
+        } else {
+          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings);
+        }
+      } else {
+        $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
+      }
+    }
+    
+  }
 }
 
 /**
@@ -280,24 +283,24 @@ function video_embed_get_handlers(){
  *  Implementation of hook_video_embed_handler_info
  */
 function video_embed_field_video_embed_handler_info(){
- return array(
-   'youtube' => array(
-     'domain' => 'youtube.com',
-     'function' => 'video_embed_field_handle_youtube',
-     'form' => 'video_embed_field_handler_youtube_form',
-     'title' => 'Youtube'
-   ), //include short form of youtube for sanity of users
-   'youtu.be' => array(
-     'domain' => 'youtu.be',
-     'function' => 'video_embed_field_handle_youtube'
-   ),
-   'vimeo' => array(
-     'domain' => 'vimeo.com',
-     'function' => 'video_embed_field_handle_vimeo',
-     'form' => 'video_embed_field_handler_vimeo_form',
-     'title' => 'Vimeo'
-   )
- );
+  return array(
+    'youtube' => array(
+      'domain' => 'youtube.com',
+      'function' => 'video_embed_field_handle_youtube',
+      'form' => 'video_embed_field_handler_youtube_form',
+      'title' => 'Youtube'
+    ), //include short form of youtube for sanity of users
+    'youtu.be' => array(
+      'domain' => 'youtu.be',
+      'function' => 'video_embed_field_handle_youtube'
+    ),
+    'vimeo' => array(
+      'domain' => 'vimeo.com',
+      'function' => 'video_embed_field_handle_vimeo',
+      'form' => 'video_embed_field_handler_vimeo_form',
+      'title' => 'Vimeo'
+    )
+  );
 }
 
 /**
