@@ -269,13 +269,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
 /**
  *  Creates a hook that other modules can implement to get handlers - hook_video_embed_handler_info
  *  Can be used to add more handlers if needed - from other modules and such
- *  Handler should be an array of the form
- *  array(
- *    'function' => 'function_name_to_call' //should be of the signature function_name($url, $teaser=FALSE) and should return the embed code
- *    'domain' => 'youtube.com' //the domain that this handler will create embed code for
- *    'form' => 'function_name_for_form' //function to create settings form (optional)
- *    'title' => 'Title' //The title of the handler - to be used as the field group header - will be wrapped with t()
- *  );
+ *  @see video_embed_field.api.php for more information
  */
 function video_embed_get_handlers(){
   $handlers = cache_get('video_embed_field_handlers');
