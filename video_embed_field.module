@@ -175,10 +175,18 @@ function video_embed_field_field_formatter_info() {
       'label' => t('Video Embed Formatter - Teaser'),
       'field types' => array('video_embed_field'),
     ),
-    'video_embed_field_formatter_thumbnail' => array(
-      'label' => t('Video Embed Formatter - Thumbnail'),
+    'video_embed_field_formatter_image_large' => array(
+      'label' => t('Video Embed Formatter - Image - Large'),
       'field types' => array('video_embed_field'),
     ),
+    'video_embed_field_formatter_image_medium' => array(
+      'label' => t('Video Embed Formatter - Image - Medium'),
+      'field types' => array('video_embed_field'),
+    ),
+    'video_embed_field_formatter_image_small' => array(
+      'label' => t('Video Embed Formatter - Image - Small'),
+      'field types' => array('video_embed_field'),
+    )
   );
 }
   
@@ -213,8 +221,12 @@ function video_embed_field_field_formatter_prepare_view($entity_type, $entities,
         $settings = $instances[$delta]['settings']['playback_settings'][$handlers[$host]['title']];
         if($display == 'video_embed_field_formatter_teaser'){
           $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'teaser');
-        } else if ($display == 'video_embed_field_formatter_thumbnail') {
-          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'thumbnail');
+        } else if ($display == 'video_embed_field_formatter_image_small') {
+          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'image', 'small');
+        } else if ($display == 'video_embed_field_formatter_image_medium') {
+          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'image', 'medium');
+        } else if ($display == 'video_embed_field_formatter_image_large') {
+          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'image', 'large');  
         } else {
           $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings);
         }
@@ -327,7 +339,7 @@ function video_embed_field_get_form($defaults){
 /**
  *  handler for youtube videos
  */
-function video_embed_field_handle_youtube($url, $settings, $type='video'){
+function video_embed_field_handle_youtube($url, $settings, $type='video', $image_size='small'){
   //figure out the id of the video they want to play from the url
   
   //strip off the http
@@ -359,8 +371,13 @@ function video_embed_field_handle_youtube($url, $settings, $type='video'){
       $id = substr($url, $pos);
     }
   }
-  if($type == 'thumbnail'){
-    //TODO handle thumbnails
+  if($type == 'image'){
+    if ($image_size == 'large') {
+      return '<img src="'.'http://img.youtube.com/vi/'.$id.'/0.jpg'.'" />'; // large
+    }
+    else { // small and medium have same size for youtube
+      return '<img src="'.'http://img.youtube.com/vi/'.$id.'/2.jpg'.'" />'; // small
+    }
   } else {
     //get settings
     $teaser = $type == 'teaser';
@@ -451,7 +468,7 @@ function video_embed_field_handler_youtube_form($defaults){
  *  handler for vimeo videos
  *  Height and width need to be configurable or something I think
  */
-function video_embed_field_handle_vimeo($url, $settings, $type = 'video'){
+function video_embed_field_handle_vimeo($url, $settings, $type = 'video', $image_size='small'){
   $pos = strripos($url, '/');
   if($pos === FALSE){
     //we can't figure out the url - just return the url as a link
@@ -462,7 +479,19 @@ function video_embed_field_handle_vimeo($url, $settings, $type = 'video'){
   }
   
   if ($type == 'thumbnail') {
-    //TODO add support for getting the thumbnail
+    $return = file_get_contents('http://vimeo.com/api/v2/video/'.$id.'.php');
+    $return = unserialize($return);
+    $video = current($return);
+    // contains also thumbnail_medium, may want to check it
+    if ($image_size == 'large') {
+      $image_url = $video['thumbnail_large'];
+    } else if ($image_size == 'medium') {
+      $image_url = $video['thumbnail_medium'];
+    } else {
+      $image_url = $video['thumbnail_small'];
+    }
+    
+    return '<img src="'.$image_url.'" />';
   } else {
     //get configuration options
     $teaser = $type == 'teaser';
