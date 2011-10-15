@@ -51,7 +51,7 @@ function video_embed_field_field_info(){
  */
 function video_embed_field_field_instance_settings_form($field, $instance) {
   $settings = $instance['settings'];
-  
+
   $form['description_field'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable <em>Description</em> field'),
@@ -61,10 +61,15 @@ function video_embed_field_field_instance_settings_form($field, $instance) {
     '#weight' => 11,
   );
   
+  //General settings for playback - formerly in the configuration section
+  $form['playback_settings'] = array(
+    '#type' => 'vertical_tabs',
+    '#title' => t('Playback settings'),
+    '#weight' => 15,
+  ) + video_embed_field_get_form($instance['settings']['playback_settings']); //add in our extra settings
+  
   return $form;
 }
-
-$abilities = (!empty($field['settings']['abilities'])) ? explode("\n", $field['settings']['abilities']) : array();
 
 /**
  *  Implementation of hook_field_widget_info
@@ -167,7 +172,11 @@ function video_embed_field_field_formatter_info() {
    'video_embed_field_formatter_teaser' => array(
      'label' => t('Video Embed Formatter - Teaser'),
      'field types' => array('video_embed_field'),
-   )
+   ),
+   'video_embed_field_formatter_thumbnail' => array(
+     'label' => t('Video Embed Formatter - Thumbnail'),
+     'field types' => array('video_embed_field'),
+   ),
  );
 }  
 /**
@@ -197,10 +206,14 @@ function video_embed_field_field_formatter_prepare_view($entity_type, $entities,
      if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
        //get what type of display it is
        $display = $displays[$delta]['type'];
+
+       $settings = $instances[$delta]['settings']['playback_settings'][$handlers[$host]['title']];
        if($display == 'video_embed_field_formatter_teaser'){
-         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], TRUE);
+         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'teaser');
+       } else if ($display == 'video_embed_field_formatter_thumbnail') {
+         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'thumbnail');
        } else {
-         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url']);
+         $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings);
        }
      } else {
        $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
@@ -289,14 +302,15 @@ function video_embed_field_video_embed_handler_info(){
 
 /**
  *  Create a form from the player configuration options
- *
+ *  $defaults will be passed in with the default settings for the various fields
  */
-function video_embed_field_get_form(){
+function video_embed_field_get_form($defaults){
   $handlers = video_embed_get_handlers();
   $form = array();
   foreach($handlers as $domain=>$handler){
     if(isset($handler['form']) && function_exists($handler['form'])){
-      $form[$handler['title']] = call_user_func($handler['form']);
+      $handler_defaults = isset($defaults[$handler['title']]) ? $defaults[$handler['title']] : array();
+      $form[$handler['title']] = call_user_func($handler['form'], $handler_defaults);
       
       $form[$handler['title']] += array(
         '#type' => 'fieldset',
@@ -304,24 +318,15 @@ function video_embed_field_get_form(){
       );       
     }
   }
-  return system_settings_form($form);
+  return $form;
 }
 
 /**
  *  handler for youtube videos
  */
-function video_embed_field_handle_youtube($url, $teaser=FALSE){
-  //get settings
-  $height = $teaser ? variable_get('video_embed_field_youtube_height_teaser', 349) : variable_get('video_embed_field_youtube_height', 349);
-  $width = $teaser ? variable_get('video_embed_field_youtube_width_teaser', 560) : variable_get('video_embed_field_youtube_width', 560);
-  $hd = variable_get('video_embed_field_youtube_hd', 1);
-  $rel = variable_get('video_embed_field_youtube_rel', 0);
-  $autoplay = variable_get('video_embed_field_youtube_autoplay', 0);
+function video_embed_field_handle_youtube($url, $settings, $type='video'){
+  //figure out the id of the video they want to play from the url
   
-  $template_start = '<iframe width="'.$width.'" height="'.$height.'" src="';
-  $template_end = '?hd='.$hd.'&amp;rel='.$rel.'&amp;wmode=opaque&amp;autoplay='.$autoplay.'" frameborder="0" allowfullscreen></iframe>';
-  $url_temp = 'http://www.youtube.com/embed/';
-
   //strip off the http
   if(stristr($url, 'http://')) {
     $url = substr($url, 7);
@@ -350,6 +355,22 @@ function video_embed_field_handle_youtube($url, $teaser=FALSE){
     } else {
       $id = substr($url, $pos);
     }
+  }
+  if($type == 'thumbnail'){
+    //TODO handle thumbnails
+  } else {
+    //get settings
+    $teaser = $type == 'teaser';
+    $height = $teaser ? $settings['teaser_height'] : $settings['height'];
+    $width = $teaser ? $settings['teaser_width'] : $settings['width'];
+    $hd = $settings['hd'];
+    $rel = $settings['rel'];
+    $autoplay = $settings['autoplay'];
+    
+    $template_start = '<iframe width="'.$width.'" height="'.$height.'" src="';
+    $template_end = '?hd='.$hd.'&amp;rel='.$rel.'&amp;wmode=opaque&amp;autoplay='.$autoplay.'" frameborder="0" allowfullscreen></iframe>';
+    $url_temp = 'http://www.youtube.com/embed/';
+
     return $template_start . $url_temp . $id . $template_end;
   }
   
@@ -358,60 +379,67 @@ function video_embed_field_handle_youtube($url, $teaser=FALSE){
  *  Defines the form elements for the youtube configuration form
  *  Eventually it might be nice to have these forms be available per instance instead of just global config
  */
-function video_embed_field_handler_youtube_form(){
+function video_embed_field_handler_youtube_form($defaults){
+  //use base defaults to ensure that each setting has some default value - $defaults, the user entered values will override
+  $base_defaults = array(
+    'height' => 349,
+    'width' => 560,
+    'teaser_height' => 349,
+    'teaser_width' => 560,
+    'autoplay' => 0,
+    'hd' => 1,
+    'rel' => 0,
+  );
+
+  $defaults = array_merge($base_defaults, $defaults);
+
   $form = array();
-  $form['video_embed_field_youtube_height'] = array(
+
+  $form['height'] = array(
     '#type' => 'textfield',
     '#size' => '5',
     '#title' => t('Player Height'),
     '#description' => t('The height of the youtube player, in pixels.  Only enter the number e.g. 349'),
-    '#default_value' => variable_get('video_embed_field_youtube_height', 349)
+    '#default_value' => $defaults['height'],
   );
-  $form['video_embed_field_youtube_width'] = array(
+  $form['width'] = array(
     '#type' => 'textfield',
     '#size' => '5',
     '#title' => t('Player Width'),
     '#description' => t('The width of the youtube player, in pixels.  Only enter the number e.g. 560'),
-    '#default_value' => variable_get('video_embed_field_youtube_width', 560)
+    '#default_value' => $defaults['width'],
   );
-  $form['teaser'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Teaser Settings'),
-    '#description' => t('Settings which will apply to the teaser version of the player'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE
-  ); 
-  $form['teaser']['video_embed_field_youtube_height_teaser'] = array(
+  $form['teaser_height'] = array(
     '#type' => 'textfield',
     '#size' => '5',
-    '#title' => t('Player Height'),
+    '#title' => t('Player Height - Teaser'),
     '#description' => t('The height of the youtube player, in pixels.  Only enter the number e.g. 349'),
-    '#default_value' => variable_get('video_embed_field_youtube_height_teaser', 349)
+    '#default_value' => $defaults['teaser_height'],
   );
-  $form['teaser']['video_embed_field_youtube_width_teaser'] = array(
+  $form['teaser_width'] = array(
     '#type' => 'textfield',
     '#size' => '5',
-    '#title' => t('Player Width'),
+    '#title' => t('Player Width - Teaser'),
     '#description' => t('The width of the youtube player, in pixels.  Only enter the number e.g. 560'),
-    '#default_value' => variable_get('video_embed_field_youtube_width_teaser', 560)
+    '#default_value' => $defaults['teaser_width'],
   );
-  $form['video_embed_field_youtube_autoplay'] = array(
+  $form['autoplay'] = array(
     '#type' => 'checkbox',
     '#title' => t('Autoplay'),
     '#description' => t('Play the video immediately.'),
-    '#default_value' => variable_get('video_embed_field_youtube_autoplay', 0)
+    '#default_value' => $defaults['autoplay'],
   );
-  $form['video_embed_field_youtube_hd'] = array(
+  $form['hd'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use HD'),
     '#description' => t('Attempt to play the video in HD if available.'),
-    '#default_value' => variable_get('video_embed_field_youtube_hd', 1)
+    '#default_value' => $defaults['hd'],
   );
-  $form['video_embed_field_youtube_rel'] = array(
+  $form['rel'] = array(
     '#type' => 'checkbox',
     '#title' => t('Show related videos'),
     '#description' => t('Show related videos after the video is finished playing.'),
-    '#default_value' => variable_get('video_embed_field_youtube_rel', 0)
+    '#default_value' => $defaults['rel'],
   );
   return $form;
 }
@@ -420,16 +448,7 @@ function video_embed_field_handler_youtube_form(){
  *  handler for vimeo videos
  *  Height and width need to be configurable or something I think
  */
-function video_embed_field_handle_vimeo($url, $teaser=FALSE){
-  //get configuration options
-  $height = $teaser ? variable_get('video_embed_field_vimeo_height_teaser', 315) : variable_get('video_embed_field_vimeo_height', 315);
-  $width = $teaser ? variable_get('video_embed_field_vimeo_width_teaser', 560): variable_get('video_embed_field_vimeo_width', 560);
-  $color = variable_get('video_embed_field_vimeo_color', '00adef');
-  $autoplay = variable_get('video_embed_field_vimeo_autoplay', 0);
-  
-  $template_start = '<iframe src="http://player.vimeo.com/video/';
-  $template_end = '?portrait=0&amp;color='.$color.'&amp;autoplay='.$autoplay.'" frameborder="0" height="'.$height.'" width="'.$width.'"></iframe>';
-  
+function video_embed_field_handle_vimeo($url, $settings, $type = 'video'){
   $pos = strripos($url, '/');
   if($pos === FALSE){
     //we can't figure out the url - just return the url as a link
@@ -437,52 +456,72 @@ function video_embed_field_handle_vimeo($url, $teaser=FALSE){
   } else {
     $pos+=1;
     $id = substr($url, $pos);
-    return $template_start . $id . $template_end;
   }
   
+  if ($type == 'thumbnail') {
+    //TODO add support for getting the thumbnail
+  } else {
+    //get configuration options
+    $teaser = $type == 'teaser';
+    $height = $teaser ? $settings['teaser_height'] : $settinges['height'];
+    $width = $teaser ? $settings['teaser_width'] : $settings['width'];
+    $color = $settings['color'];
+    $autoplay = $settings['autoplay'];
+    
+    $template_start = '<iframe src="http://player.vimeo.com/video/';
+    $template_end = '?portrait=0&amp;color='.$color.'&amp;autoplay='.$autoplay.'" frameborder="0" height="'.$height.'" width="'.$width.'"></iframe>';
+    
+    return $template_start . $id . $template_end;
+  }
 }
 
 /**
  *  Defines the form elements for the vimeo configuration form
  */
-function video_embed_field_handler_vimeo_form(){
+function video_embed_field_handler_vimeo_form($defaults){
+  //use base defaults to ensure that each setting has some default value - $defaults, the user entered values will override 
+  $base_defaults = array(
+    'height' => 315,
+    'width' => 560,
+    'teaser_height' => 315,
+    'teaser_width' => 560,
+    'color' => '00adef',
+    'autoplay' => 0
+  );
+  $defaults = array_merge($base_defaults, $defaults);
+  
   $form = array();
-  $form['video_embed_field_vimeo_height'] = array(
+  
+  $form['height'] = array(
     '#type' => 'textfield',
     '#size' => '5',
     '#title' => t('Player Height'),
     '#description' => t('The height of the vimeo player, in pixels.  Only enter the number e.g. 315'),
-    '#default_value' => variable_get('video_embed_field_vimeo_height', 315)
+    '#default_value' => $defaults['height'],
   );
-  $form['video_embed_field_vimeo_width'] = array(
+  $form['width'] = array(
     '#type' => 'textfield',
     '#size' => '5',
     '#title' => t('Player Width'),
     '#description' => t('The width of the vimeo player, in pixels.  Only enter the number e.g. 560'),
-    '#default_value' => variable_get('video_embed_field_vimeo_width', 560)
-  ); 
-  $form['teaser'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Teaser Settings'),
-    '#description' => t('Settings which will apply to the teaser version of the player'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE
+    '#default_value' => $defaults['width'],
   );
-  $form['teaser']['video_embed_field_vimeo_height_teaser'] = array(
+  $form['teaser_height'] = array(
     '#type' => 'textfield',
     '#size' => '5',
-    '#title' => t('Player Height'),
+    '#title' => t('Player Height - Teaser'),
     '#description' => t('The height of the vimeo player, in pixels.  Only enter the number e.g. 315'),
-    '#default_value' => variable_get('video_embed_field_vimeo_height_teaser', 315)
-  ); 
-  $form['teaser']['video_embed_field_vimeo_width_teaser'] = array(
+    '#default_value' => $defaults['teaser_height'],
+  );
+  $form['teaser_width'] = array(
     '#type' => 'textfield',
     '#size' => '5',
-    '#title' => t('Player Width'),
+    '#title' => t('Player Width - Teaser'),
     '#description' => t('The width of the vimeo player, in pixels.  Only enter the number e.g. 560'),
-    '#default_value' => variable_get('video_embed_field_vimeo_width_teaser', 560)
-  ); 
-  $form['video_embed_field_vimeo_color'] = array(
+    '#default_value' => $defaults['teaser_width'],
+  );
+  
+  $form['color'] = array(
     '#type' => 'select',
     '#options' => array(
       '00adef' => t('Blue'),
@@ -493,13 +532,13 @@ function video_embed_field_handler_vimeo_form(){
     ), 
     '#title' => t('Player Color'),
     '#description' => t('The color to use on the vimeo player.'),
-    '#default_value' => variable_get('video_embed_field_vimeo_color', '00adef')
+    '#default_value' => $defaults['color'],
   );
-  $form['video_embed_field_vimeo_autoplay'] = array(
+  $form['autoplay'] = array(
     '#type' => 'checkbox',
     '#title' => t('Autoplay'),
     '#description' => t('Play the video immediately.'),
-    '#default_value' => variable_get('video_embed_field_vimeo_autoplay', 0)
+    '#default_value' => $defaults['autoplay'],
   );
   return $form;
 }
