@@ -46,12 +46,15 @@ function video_embed_field_field_instance_settings_form($field, $instance) {
     '#weight' => 11,
   );
   
+  //Grab the settings off the parser form
+  $parser_form = isset($instance['settings']['playback_settings']) ? video_embed_field_get_form($instance['settings']['playback_settings']) : array();
+  
   //General settings for playback - formerly in the configuration section
   $form['playback_settings'] = array(
     '#type' => 'vertical_tabs',
     '#title' => t('Playback settings'),
     '#weight' => 15,
-  ) + video_embed_field_get_form($instance['settings']['playback_settings']); //add in our extra settings
+  ) +  $parser_form; //add in our extra settings
   
   return $form;
 }
