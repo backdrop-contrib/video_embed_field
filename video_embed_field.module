@@ -47,8 +47,9 @@ function video_embed_field_field_instance_settings_form($field, $instance) {
   );
   
   //Grab the settings off the parser form
-  $parser_form = isset($instance['settings']['playback_settings']) ? video_embed_field_get_form($instance['settings']['playback_settings']) : array();
-  
+  $parser_form = isset($instance['settings']['playback_settings']) ? video_embed_field_get_form($instance['settings']['playback_settings']) :   
+    video_embed_field_get_form(array());
+
   //General settings for playback - formerly in the configuration section
   $form['playback_settings'] = array(
     '#type' => 'vertical_tabs',
@@ -208,9 +209,12 @@ function video_embed_field_field_formatter_prepare_view($entity_type, $entities,
       if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
         //get what type of display it is
         $display = $displays[$delta]['type'];
-  
-        $settings = $instances[$delta]['settings']['playback_settings'][$handlers[$host]['title']];
-        $settings = array_merge($handlers[$host]['defaults'], $settings);
+        if(isset($instances[$delta]['settings']['playback_settings'])){
+          $settings = $instances[$delta]['settings']['playback_settings'][$handlers[$host]['title']];
+          $settings = array_merge($handlers[$host]['defaults'], $settings);
+        } else {
+          $settings = $handlers[$host]['defaults'];
+        }
         
         if($display == 'video_embed_field_formatter_teaser'){
           $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'teaser');
@@ -363,7 +367,8 @@ function video_embed_field_video_embed_handler_info(){
     'youtu.be' => array(
       'domain' => 'youtu.be',
       'defaults' => $ytdefaults,
-      'function' => 'video_embed_field_handle_youtube'
+      'function' => 'video_embed_field_handle_youtube',
+      'title' => 'Youtube',
     ),
     'vimeo' => array(
       'domain' => 'vimeo.com',
@@ -663,4 +668,42 @@ function video_embed_field_handler_vimeo_form($defaults){
     '#default_value' => $defaults['autoplay'],
   );
   return $form;
+}
+
+/**
+ *  Implementation of hook_requirements
+ *  Warn users if they are using the default settings because they haven't updated their fields
+ */
+function video_embed_field_requirements($phase){
+  if($phase == 'runtime'){
+    $fields = array_filter(field_info_fields(), '_video_embed_field_array_filter');
+    
+    $errors = array();
+    foreach($fields as $field_name => $field){
+      $instances = field_read_instances(array('field_name' => $field_name));
+      
+      foreach($instances as $key => $instance){
+        if (!isset($instance['settings']['playbacksettings'])) {
+          $errors[] = $instance['field_name'] . ' on ' . $instance['entity_type'] . ' type ' . $instance['bundle'];
+        }
+      }
+    }
+    
+    if(!empty($errors)){
+      $requirements = array(
+        'video_embed_field' => array(
+          'description' =>  t('Some video_embed_fields are using the old settings format.  You will need to go set the preferences for each field manually. '),
+          'severity' => REQUIREMENT_ERROR,
+          'title' => t('Video Embed Field settings:'),
+          'value' => implode(', ', $errors),
+        ),
+      );
+      return $requirements;
+    }
+  }
+}
+
+//used to array filter in video_embed_field_requirements
+function _video_embed_field_array_filter($item) {
+  return (isset($item['type']) && $item['type'] == 'video_embed_field');
 }
