@@ -202,6 +202,9 @@ function video_embed_field_field_formatter_prepare_view($entity_type, $entities,
         $host = substr($host, 4);
       }
       
+      //make our host all lowercase so that it'll properly match the index
+      $host = strtolower($host);
+      
       if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
         //get what type of display it is
         $display = $displays[$delta]['type'];
