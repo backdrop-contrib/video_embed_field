@@ -230,36 +230,3 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
   
   return $element;
 }
-
-/**
- * Implements hook_requirements().
- * Warn users if they are using the default settings because they haven't updated their fields
- */
-function video_embed_field_requirements($phase) {
-  if ($phase == 'runtime') {
-    $fields = array_filter(field_info_fields(), '_video_embed_field_array_filter');
-    
-    $errors = array();
-    foreach ($fields as $field_name => $field) {
-      $instances = field_read_instances(array('field_name' => $field_name));
-      
-      foreach ($instances as $key => $instance) {
-        if (!isset($instance['settings']['playbacksettings'])) {
-          $errors[] = $instance['field_name'] . ' on ' . $instance['entity_type'] . ' type ' . $instance['bundle'];
-        }
-      }
-    }
-    
-    if (!empty($errors)) {
-      $requirements = array(
-        'video_embed_field' => array(
-          'description' =>  t('Some video_embed_fields are using the old settings format.  You will need to go set the preferences for each field manually. '),
-          'severity' => REQUIREMENT_ERROR,
-          'title' => t('Video Embed Field settings:'),
-          'value' => implode(', ', $errors),
-        ),
-      );
-      return $requirements;
-    }
-  }
-}
