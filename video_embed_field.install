@@ -43,12 +43,25 @@ function video_embed_field_field_schema($field){
 function video_embed_field_schema(){
   $schema['vef_video_styles'] = array(
     'description' => 'Stores video styles.',
+    'export' => array(
+      'key' => 'name',
+      'primary key' => 'vsid',
+      'identifier' => 'video_style',                // Exports will be as $video_style
+      'default hook' => 'default_video_styles',  // Function hook name.
+      'api' => array(
+        'owner' => 'video_embed_field',
+        'api' => 'default_video_styles',  // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
     'fields' => array(
       'vsid' => array(
         'description' => 'The primary identifier for a video style.',
         'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
+        'no export' => TRUE,
       ),
       'name' => array(
         'description' => 'The style name.',
