@@ -147,11 +147,6 @@ function video_embed_field_field_formatter_info() {
       'field types' => array('video_embed_field'),
       'settings' => array('video_style' => 'normal', 'description' => 1),
     ),
-    'video_embed_thumbnail' => array(
-      'label' => t('Thumbnail Preview'),
-      'field types' => array('video_embed_field'),
-      'settings' => array('image_style' => 'default', 'description' => 0),
-    ),
   );
 }
 
