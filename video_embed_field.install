@@ -1,15 +1,13 @@
 <?php 
 
 /**
- *  Install file for video_embed_field module
- *  @author jcaldwell
+ * Install file for video_embed_field module
+ * @author jcaldwell
  */
  
 /**
- *  Implementation of hook_field_schema
- *  Define the schema for the field
- */ 
- 
+ * Implements hook_field_schema().
+ */
 function video_embed_field_field_schema($field){
   switch($field['type']){
     case 'video_embed_field' :
@@ -39,14 +37,52 @@ function video_embed_field_field_schema($field){
   );
 }
 
-function video_embed_field_uninstall(){
-  //do nothing right now - should eventually remove all the variables
+/**
+ * Implements hook_schema().
+ */
+function video_embed_field_schema(){
+  $schema['vef_video_styles'] = array(
+    'description' => 'Stores video styles.',
+    'fields' => array(
+      'vsid' => array(
+        'description' => 'The primary identifier for a video style.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The style name.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'data' => array(
+        'description' => 'The configuration data for the style.',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('vsid'),
+    'unique keys' => array(
+      'name' => array('name')
+    ),
+  );
   
-  
+  return $schema;
 }
 
 /**
- *  Add an optional description form
+ * Implements hook_uninstall().
+ */
+function video_embed_field_uninstall(){
+  //do nothing right now - should eventually remove all the variables
+}
+
+/**
+ * Update 7000
+ * Add an optional description form
  */
 function video_embed_field_update_7000() {
   // Get the list of fields of type 'video_embed_field'.
@@ -72,4 +108,17 @@ function video_embed_field_update_7000() {
   }
   
   return t('Additional columns added.');
+}
+
+/**
+ * Update 7001
+ * Add video style storage table
+ */
+function video_embed_field_update_7001() {
+  if (!db_table_exists('vef_video_styles')) {
+    $schema = video_embed_field_schema();
+    db_create_table('vef_video_styles', $schema['vef_video_styles']);
+  }
+  
+  return t('Video styles storage table created.');
 }

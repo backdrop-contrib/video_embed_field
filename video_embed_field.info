@@ -2,4 +2,4 @@ name = "Video Embed Field"
 description = "Expose a field type for embedding videos from youtube or vimeo."
 core = 7.x
 package = Media
-configure = admin/config/media/video_embed_field
+configure = admin/config/media/video-embed-field

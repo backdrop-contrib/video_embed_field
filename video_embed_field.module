@@ -1,492 +1,522 @@
 <?php 
 
 /**
- *  Provides a simple field for easily embedding videos from youtube or vimeo
+ * Provides a simple field for easily embedding videos from youtube or vimeo
  *
- *  This module is not intended to replace media or video - it does not allow for any local storage of videos, custom players or anything else
- *  It simply allows users to embed videos from youtube and vimeo - and provides a hook to allow other modules to provide more providers.
+ * This module is not intended to replace media or video - it does not allow for any local storage of videos, custom players or anything else
+ * It simply allows users to embed videos from youtube and vimeo - and provides a hook to allow other modules to provide more providers.
  *
- *  @author jcaldwell aka jec006
+ * @author jcaldwell aka jec006, jdelaune
  */
+
+/**
+ * Video style constant for user presets in the database.
+ */
+define('VIDEO_EMBED_FIELD_VIDEO_STORAGE_NORMAL', 1);
+
+/**
+ * Video style constant for user presets that override module-defined presets.
+ */
+define('VIDEO_EMBED_FIELD_VIDEO_STORAGE_OVERRIDE', 2);
+
+/**
+ * Video style constant for module-defined presets in code.
+ */
+define('VIDEO_EMBED_FIELD_VIDEO_STORAGE_DEFAULT', 4);
+
+/**
+ * Image style constant to represent an editable preset.
+ */
+define('VIDEO_EMBED_FIELD_VIDEO_STORAGE_EDITABLE', VIDEO_EMBED_FIELD_VIDEO_STORAGE_NORMAL | VIDEO_EMBED_FIELD_VIDEO_STORAGE_OVERRIDE);
+
+// Load all Field module hooks.
+require_once DRUPAL_ROOT . base_path() . drupal_get_path('module', 'video_embed_field') . '/video_embed_field.field.inc';
+
+/**
+ * Implements of hook_menu().
+ */
+function video_embed_field_menu() {
+  $items = array();
+  
+  $items['admin/config/media/video-embed-field'] = array(
+    'title' => 'Video Embed Field',
+    'description' => 'Configure styles that can be used for displaying embedded videos.',
+    'page callback' => 'video_embed_field_video_style_list',
+    'access arguments' => array('administer video styles'),
+    'file' => 'video_embed_field.admin.inc',
+  );
+  $items['admin/config/media/video-embed-field/list'] = array(
+    'title' => 'List',
+    'description' => 'List the current video styles on the site.',
+    'page callback' => 'video_embed_field_video_style_list',
+    'access arguments' => array('administer video styles'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 1,
+    'file' => 'video_embed_field.admin.inc',
+  );
+  $items['admin/config/media/video-embed-field/add'] = array(
+    'title' => 'Add style',
+    'description' => 'Add a new video style.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_embed_field_video_style_add_form'),
+    'access arguments' => array('administer video styles'),
+    'type' => MENU_LOCAL_ACTION,
+    'weight' => 2,
+    'file' => 'video_embed_field.admin.inc',
+  );
+  $items['admin/config/media/video-embed-field/edit/%video_embed_field_video_style'] = array(
+    'title' => 'Edit style',
+    'description' => 'Configure an video style.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_embed_field_video_style_form', 5),
+    'access arguments' => array('administer video styles'),
+    'file' => 'video_embed_field.admin.inc',
+  );
+  $items['admin/config/media/video-embed-field/delete/%video_embed_field_video_style'] = array(
+    'title' => 'Delete style',
+    'description' => 'Delete an video style.',
+    'load arguments' => array(NULL, (string) VIDEO_EMBED_FIELD_VIDEO_STORAGE_NORMAL),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_embed_field_video_style_delete_form', 5),
+    'access arguments' => array('administer video styles'),
+    'file' => 'video_embed_field.admin.inc',
+  );
+  $items['admin/config/media/video-embed-field/revert/%video_embed_field_video_style'] = array(
+    'title' => 'Revert style',
+    'description' => 'Revert an video style.',
+    'load arguments' => array(NULL, (string) VIDEO_EMBED_FIELD_VIDEO_STORAGE_OVERRIDE),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_embed_field_video_style_revert_form', 5),
+    'access arguments' => array('administer video styles'),
+    'file' => 'video_embed_field.admin.inc',
+  );
+  
+  return $items;
+}
+
+/**
+ * Get an array of all styles and their settings.
+ *
+ * @return
+ *   An array of styles keyed by the video style ID (vsid).
+ * @see video_embed_field_video_style_load()
+ */
+function video_embed_field_video_styles() {
+  $styles = &drupal_static(__FUNCTION__);
  
-/**
- *  Implementation of hook_field_info
- *  Define the fields we're creating
- */
-function video_embed_field_field_info(){
-  return array(
-    'video_embed_field' => array(
-      'label' => 'Video Embed',
-      'description' => 'Embed videos from youtube or vimeo',
-      'settings' => array(
-        //no settings currently - not sure what we need
-      ),
-      'instance_settings' => array(
-        'allowed_types' => array('youtube', 'vimeo'),
-        'description_field' => 0,
-      ),
-      'default_widget' => 'video_embed_field_widget',
-      'default_formatter' => 'video_embed_field_formatter',
-    )
-  );
-}
-
-/**
- * Implements hook_field_instance_settings_form().
- */
-function video_embed_field_field_instance_settings_form($field, $instance) {
-  $settings = $instance['settings'];
-
-  $form['description_field'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable <em>Description</em> field'),
-    '#default_value' => isset($settings['description_field']) ? $settings['description_field'] : '',
-    '#description' => t('The description field allows users to enter a description about the video.'),
-    '#parents' => array('instance', 'settings', 'description_field'),
-    '#weight' => 11,
-  );
-  
-  //Grab the settings off the parser form
-  $parser_form = isset($instance['settings']['playback_settings']) ? video_embed_field_get_form($instance['settings']['playback_settings']) :   
-    video_embed_field_get_form(array());
-
-  //General settings for playback - formerly in the configuration section
-  $form['playback_settings'] = array(
-    '#type' => 'vertical_tabs',
-    '#title' => t('Playback settings'),
-    '#weight' => 15,
-  ) +  $parser_form; //add in our extra settings
-  
-  return $form;
-}
-
-/**
- *  Implementation of hook_field_widget_info
- *  Define the widget for inputting 
- */
-function video_embed_field_field_widget_info(){
-  return array(
-    'video_embed_field_widget' => array(
-      'label' => 'Video Embed',
-      'description' => 'Provides a video embed field',
-      'field types' => array('video_embed_field'),
-      'settings' => array(),
-      'behaviors' => array(
-        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
-        'default value' => FIELD_BEHAVIOR_DEFAULT
-      ),
-    ),
-  );
-}
-
-/**
- *  implementation of hook_field_widget_form
- */
-function video_embed_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element){
-  //don't need to check the type right now because we're only defining one
-  $element += array(
-    '#type' => 'video_embed_field_widget'
-  );
-  
-  $element['video_url'] = array(
-    '#type' => 'textfield',
-    '#title' => $element['#title'],
-    '#description' => $element['#description'],
-    '#attributes' => array('class' => array('video_embed_url')),
-    '#attached' => array( 
-      'css' => array( 
-        drupal_get_path('module', 'video_embed_field') .'/video_embed_field.form.css'
-      )
-    ),
-    '#default_value' => isset($items[$delta]['video_url'])?$items[$delta]['video_url']:'',
-    '#required' => $element['#required']
-  );
-  
-  // Add the description field if enabled.
-  if (!empty($instance['settings']['description_field'])) {
-    $element['description'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Description'),
-      '#default_value' => isset($items[$delta]['description']) ? $items[$delta]['description'] : '',
-      '#description' => t('The description which may be used as a label.'),
-    );
-  }
-
-  return $element;
-}
-
-function video_embed_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
-  foreach ($items as $delta => $item) {
-    if(!empty($item['video_url'])){
-      $item['video_url'] = trim($item['video_url']);
-      if(stristr($item['video_url'], '.') && !stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
-        $item['video_url'] = 'http://' . $item['video_url'];
-      }
-    
-      $parts = parse_url($item['video_url']);
-      if(!$parts || !isset($parts['host'])){
-        $errors[$field['field_name']][$langcode][$delta][] = array(
-          'error' => t('Invalid Url'), 
-          'message' => t('Video: Invalid Video URL.', array('%name' => $instance['label'])),
-        );
-      } else {
-        $host = $parts['host'];
-        if(stripos($host, 'www.') > -1){
-          $host = substr($host, 4);
-        }
-        $handlers = video_embed_get_handlers();
-        if(!isset($handlers[$host]['function']) || !function_exists($handlers[$host]['function'])){
-          $errors[$field['field_name']][$langcode][$delta][] = array(
-            'error' => t('Unsupported Video Provider'), 
-            'message' => t('%name: This video provider is not currently supported.', array('%name' => $instance['label'])),
-          );
+  // Grab from cache or build the array.
+  if (!isset($styles)) {
+    if ($cache = cache_get('video_embed_field_video_styles', 'cache')) {
+      $styles = $cache->data;
+    }
+    else {
+      $styles = array();
+      
+      // Select the module-defined styles.
+      foreach (module_implements('video_embed_field_video_default_styles') as $module) {
+        $module_styles = module_invoke($module, 'video_embed_field_video_default_styles');
+        foreach ($module_styles as $style_name => $style) {
+          $style['name'] = $style_name;
+          $style['module'] = $module;
+          $style['storage'] = VIDEO_EMBED_FIELD_VIDEO_STORAGE_DEFAULT;
+          $styles[$style_name] = $style;
         }
       }
+      
+      // Select all the user-defined styles.
+      $user_styles = db_select('vef_video_styles', NULL, array('fetch' => PDO::FETCH_ASSOC))
+        ->fields('vef_video_styles')
+        ->orderBy('name')
+        ->execute()
+        ->fetchAllAssoc('name', PDO::FETCH_ASSOC);
+      
+      // Allow the user styles to override the module styles.
+      foreach ($user_styles as $style_name => $style) {
+        $style['module'] = NULL;
+        $style['storage'] = VIDEO_EMBED_FIELD_VIDEO_STORAGE_NORMAL;
+        if (isset($styles[$style_name]['module'])) {
+          $style['module'] = $styles[$style_name]['module'];
+          $style['storage'] = VIDEO_EMBED_FIELD_VIDEO_STORAGE_OVERRIDE;
+        }
+        $style['settings'] = unserialize($style['data']);
+        unset($style['data']);
+        $styles[$style_name] = $style;
+      }
+      
+      drupal_alter('video_embed_field_video_styles', $styles);
+      cache_set('video_embed_field_video_styles', $styles);
     }
   }
-}
-
-/**
- *  Implementation of hook_field_is_empty
- *  Determine whether the field is empty
- */
-function video_embed_field_field_is_empty($item, $field){
-  return empty($item) || empty($item['video_url']) || $item['video_url'] === '';
-}
-
-function video_embed_field_field_formatter_info() {
-  return array(
-    'video_embed_field_formatter' => array(
-      'label' => t('Video Embed Formatter'),
-      'field types' => array('video_embed_field'),
-    ),
-    'video_embed_field_formatter_teaser' => array(
-      'label' => t('Video Embed Formatter - Teaser'),
-      'field types' => array('video_embed_field'),
-    ),
-    'video_embed_field_formatter_image_large' => array(
-      'label' => t('Video Embed Formatter - Image - Large'),
-      'field types' => array('video_embed_field'),
-    ),
-    'video_embed_field_formatter_image_medium' => array(
-      'label' => t('Video Embed Formatter - Image - Medium'),
-      'field types' => array('video_embed_field'),
-    ),
-    'video_embed_field_formatter_image_small' => array(
-      'label' => t('Video Embed Formatter - Image - Small'),
-      'field types' => array('video_embed_field'),
-    )
-  );
-}
   
+  return $styles;
+}
+
 /**
-*  Implementation of hook_field_formatter_prepare_view
-*  Prepare the view of the video embed - if the embed code doesn't exist, create it using the url
-*/
-function video_embed_field_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays){
+ * Implements hook_video_embed_field_video_default_styles().
+ */
+function video_embed_field_video_embed_field_video_default_styles() {
+  $styles = array();
+  
   $handlers = video_embed_get_handlers();
+  foreach ($handlers as $name => $handler) {
+    $styles['normal']['settings'][$name] = $handler['defaults'];
+    $styles['teaser']['settings'][$name] = $handler['defaults'];
+    $styles['teaser']['settings'][$name]['width'] = 480;
+    $styles['teaser']['settings'][$name]['height'] = 270;
+  }
   
-  foreach($items as $delta=>$item_wrapper){
-    foreach($item_wrapper as $key=>$item){
-      if(!stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')){
-        $item['video_url'] = 'http://' . $item['video_url'];
-      }
-      $parts = parse_url($item['video_url']);
-      //make sure bad data won't mess everything up
-      if(!isset($parts['host'])){
-        $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
-        return;
-      }
-      
-      $host = $parts['host'];
-      if(stripos($host, 'www.') > -1){
-        $host = substr($host, 4);
-      }
-      
-      //make our host all lowercase so that it'll properly match the index
-      $host = strtolower($host);
-      
-      if(isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])){
-        //get what type of display it is
-        $display = $displays[$delta]['type'];
-        if(isset($instances[$delta]['settings']['playback_settings'])){
-          $settings = $instances[$delta]['settings']['playback_settings'][$handlers[$host]['title']];
-          $settings = array_merge($handlers[$host]['defaults'], $settings);
-        } else {
-          $settings = $handlers[$host]['defaults'];
-        }
-        
-        if($display == 'video_embed_field_formatter_teaser'){
-          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'teaser');
-        } else if ($display == 'video_embed_field_formatter_image_small') {
-          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'image', 'small');
-        } else if ($display == 'video_embed_field_formatter_image_medium') {
-          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'image', 'medium');
-        } else if ($display == 'video_embed_field_formatter_image_large') {
-          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings, 'image', 'large');  
-        } else {
-          $items[$delta][$key]['embed_code'] = call_user_func($handlers[$host]['function'], $item['video_url'], $settings);
-        }
-      } else {
-        $items[$delta][$key]['embed_code'] = l($item['video_url'], $item['video_url']);
-      }
-    }
-    
-  }
+  return $styles;
 }
 
 /**
-*  implementation of hook_field_widget_form
-*/
-function video_embed_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display){
-  $element = array();
-
-  foreach ($items as $delta => $item) {
-    if(isset($item['description']) && $item['description']){
-      $description = array(
-        '#prefix' => '<div class="video-embed-description">',
-        '#markup' => $item['description'],
-        '#suffix' => '</div>',
-      );
-    } else {
-      $description = array();
-    }
-    $element[$delta] = array(
-      array(
-        '#markup' => $item['embed_code']
-      ),
-      $description      
-    );
-  }
-
-  return $element;
-}
-/**
- *  Creates a hook that other modules can implement to get handlers - hook_video_embed_handler_info
- *  Can be used to add more handlers if needed - from other modules and such
- *  @see video_embed_field.api.php for more information
+ * Load a style by style name or ID. May be used as a loader for menu items.
+ *
+ * @param $name
+ *   The name of the style.
+ * @param $isid
+ *   Optional. The numeric id of a style if the name is not known.
+ * @param $include
+ *   If set, this loader will restrict to a specific type of video style, may be
+ *   one of the defined video style storage constants.
+ * @return
+ *   An video style array containing the following keys:
+ *   - "vsid": The unique image style ID.
+ *   - "name": The unique image style name.
+ *   - "settings": An array of video settings within this video style.
+ *   If the video style name or ID is not valid, an empty array is returned.
  */
-function video_embed_get_handlers(){
+function video_embed_field_video_style_load($name = NULL, $vsid = NULL, $include = NULL) {
+  $styles = video_embed_field_video_styles();
+  
+  // If retrieving by name.
+  if (isset($name) && isset($styles[$name])) {
+    $style = $styles[$name];
+  }
+  
+  // If retrieving by image style id.
+  if (!isset($name) && isset($vsid)) {
+    foreach ($styles as $name => $database_style) {
+      if (isset($database_style['vsid']) && $database_style['vsid'] == $vsid) {
+        $style = $database_style;
+        break;
+      }
+    }
+  }
+  
+  // Restrict to the specific type of flag. This bitwise operation basically
+  // states "if the storage is X, then allow".
+  if (isset($style) && (!isset($include) || ($style['storage'] & (int) $include))) {
+    return $style;
+  }
+  
+  // Otherwise the style was not found.
+  return FALSE;
+}
+
+/**
+ * Save a video style.
+ *
+ * @param style
+ *   A video style array.
+ * @return
+ *   A video style array. In the case of a new style, 'vsid' will be populated.
+ */
+function video_embed_field_video_style_save($style) {
+  if (isset($style['vsid']) && is_numeric($style['vsid'])) {
+    // Load the existing style to make sure we account for renamed styles.
+    $old_style = video_embed_field_video_style_load(NULL, $style['vsid']);
+    video_embed_field_video_style_flush($old_style);
+    drupal_write_record('vef_video_styles', $style, 'vsid');
+    if ($old_style['name'] != $style['name']) {
+      $style['old_name'] = $old_style['name'];
+    }
+  }
+  else {
+    drupal_write_record('vef_video_styles', $style);
+    $style['is_new'] = TRUE;
+  }
+  
+  // Let other modules update as necessary on save.
+  module_invoke_all('video_embed_field_video_style_save', $style);
+  
+  // Clear all caches and flush.
+  video_embed_field_video_style_flush($style);
+  
+  return $style;
+}
+
+/**
+ * Delete a video style.
+ *
+ * @param $style
+ *   A video style array.
+ * @param $replacement_style_name
+ *   (optional) When deleting a style, specify a replacement style name so
+ *   that existing settings (if any) may be converted to a new style.
+ * @return
+ *   TRUE on success.
+ */
+function video_embed_field_video_style_delete($style, $replacement_style_name = '') {
+  video_embed_field_video_style_flush($style);
+  
+  db_delete('vef_video_styles')->condition('vsid', $style['vsid'])->execute();
+  
+  // Let other modules update as necessary on save.
+  $style['old_name'] = $style['name'];
+  $style['name'] = $replacement_style_name;
+  module_invoke_all('video_embed_field_video_style_delete', $style);
+  
+  return TRUE;
+}
+
+/**
+ * Get an array of image styles suitable for using as select list options.
+ *
+ * @param $include_empty
+ *   If TRUE a <none> option will be inserted in the options array.
+ * @return
+ *   Array of image styles both key and value are set to style name.
+ */
+function video_embed_field_video_style_options($include_empty = TRUE) {
+  $styles = video_embed_field_video_styles();
+  $options = array();
+  if ($include_empty && !empty($styles)) {
+    $options[''] = t('<none>');
+  }
+  $options = array_merge($options, drupal_map_assoc(array_keys($styles)));
+  if (empty($options)) {
+    $options[''] = t('No defined styles');
+  }
+  return $options;
+}
+
+/**
+ * Save a default video style to the database.
+ *
+ * @param style
+ *   A video style array provided by a module.
+ * @return
+ *   A video style array. The returned style array will include the new 'vsid'
+ *   assigned to the style.
+ */
+function video_embed_field_default_style_save($style) {
+  $style = video_embed_field_video_style_save($style);
+  return $style;
+}
+
+/**
+ * Revert the changes made by users to a default video style.
+ *
+ * @param style
+ *   A video style array.
+ * @return
+ *   Boolean TRUE if the operation succeeded.
+ */
+function video_embed_field_default_style_revert($style) {
+  video_embed_field_video_style_flush($style);
+  
+  db_delete('vef_video_styles')->condition('vsid', $style['vsid'])->execute();
+  
+  return TRUE;
+}
+
+/**
+ * Flush cached video styles.
+ *
+ * @param $style
+ *   A video style array.
+ */
+function video_embed_field_video_style_flush($style) {
+  // Let other modules update as necessary on flush.
+  module_invoke_all('video_embed_field_video_style_flush', $style);
+  
+  // Clear image style and effect caches.
+  cache_clear_all('video_embed_field_video_styles', 'cache', TRUE);
+  drupal_static_reset('video_embed_field_video_styles');
+  
+  // Clear field caches so that formatters may be added for this style.
+  field_info_cache_clear();
+  drupal_theme_rebuild();
+  
+  // Clear page caches when flushing.
+  if (module_exists('block')) {
+    cache_clear_all('*', 'cache_block', TRUE);
+  }
+  cache_clear_all('*', 'cache_page', TRUE);
+}
+
+/**
+ * Implements hook_permission().
+ */
+function video_embed_field_permission() {
+  return array(
+    'administer video styles' => array(
+      'title' => t('Administer video styles'),
+      'description' => t('Create and modify styles for embedded videos.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function video_embed_field_theme() {
+  return array(
+    // Theme functions in video_embed_field.admin.inc.
+    'video_embed_field_video_style_list' => array(
+      'variables' => array('styles' => NULL),
+    ),
+    'video_embed_field_embed_code' => array(
+      'variables' => array('url' => NULL, 'style' => 'normal'),
+    ),
+  );
+}
+
+/**
+ * Creates a hook that other modules can implement to get handlers - hook_video_embed_handler_info
+ * Can be used to add more handlers if needed - from other modules and such
+ * @see video_embed_field.api.php for more information
+ */
+function video_embed_get_handlers() {
   $handlers = cache_get('video_embed_field_handlers');
   
-  if($handlers === FALSE){
-    $available = module_invoke_all('video_embed_handler_info');
-    foreach($available as $handler){
-      $handlers[$handler['domain']] = $handler;
-    }
+  if ($handlers === FALSE) {
+    $handlers = module_invoke_all('video_embed_handler_info');
     drupal_alter('video_embed_field_handlers', $handlers);
     cache_set('video_embed_field_handlers', $handlers);
-  } else {
+  }
+  else {
     $handlers = $handlers->data;
   }
+  
   return $handlers;
 }
 
 /**
- *  Adds a formatter for inserting directly into content
+ * Create a form from the player configuration options
+ * $defaults will be passed in with the default settings for the various fields
  */
-
-/**
- * Implements hook_filter_info().
- */
-function video_embed_field_filter_info() {
-  $filters['video_embed_field'] = array(
-    'title' => t('Video Embedding'),
-    'description' => t('Replaces [VIDEO::http://www.youtube.com/watch?v=someVideoID] tags with embedded videos.'),
-    'process callback'  => 'video_embed_field_filter_process',
-  );
+function video_embed_field_get_form($defaults) {
+  $form = array();
   
-  return $filters;
-}
-
-/**
- * Video Embed Field filter process callback
- */
-function video_embed_field_filter_process($text, $filter, $format) {
-  preg_match_all('/ \[VIDEO:: ( [^\[\]]+ )* \] /x', $text, $matches);
-  
-  $tag_match = (array) array_unique($matches[1]);
   $handlers = video_embed_get_handlers();
-  
-  foreach($tag_match as $video_url) {
-    // Add http if needed
-    if (!stristr($video_url, 'http://') && !stristr($video_url, 'https://')) {
-      $video_url = 'http://' . $video_url;
-    }
-    
-    $parts = parse_url($video_url);
-    // Make sure bad data won't mess everything up
-    if (!isset($parts['host'])) {
-      $embed_code = l($video_url, $video_url);
-    }
-    else {
-      $host = $parts['host'];
-      if (stripos($host, 'www.') > -1) {
-        $host = substr($host, 4);
-      }
+  foreach ($handlers as $name => $handler) {
+    if (isset($handler['form']) && function_exists($handler['form'])) {
+      $handler_defaults = isset($defaults[$name]) ? $defaults[$name] : array();
+      $handler_defaults = array_merge($handler['defaults'], $handler_defaults);
       
-      if (isset($handlers[$host]['function']) && function_exists($handlers[$host]['function'])) {
-        $defaults = $handlers[$host]['defaults']; //TODO We need a way for people to configure how an embed works
-        $embed_code = call_user_func($handlers[$host]['function'], $video_url, $defaults);
-      }
-      else {
-        $embed_code = l($video_url, $video_url);
-      }
+      $form[$name] = call_user_func($handler['form'], $handler_defaults);
+      
+      $form[$name] += array(
+        '#type' => 'fieldset',
+        '#title' => t($handler['title']),
+        '#tree' => TRUE,
+      );
     }
-    
-    $text = str_replace('[VIDEO::' . $video_url . ']', $embed_code, $text);
   }
   
-  return $text;
+  return $form;
 }
 
 /**
  *  Implementation of hook_video_embed_handler_info
  */
-function video_embed_field_video_embed_handler_info(){
-  $ytdefaults = array(
-    'height' => 349,
-    'width' => 560,
-    'teaser_height' => 349,
-    'teaser_width' => 560,
-    'autoplay' => 0,
-    'hd' => 1,
-    'rel' => 0,
-    'autohide' => 2,
-    'showinfo' => 1,
-    'theme' => 'dark'
-  );
-  return array(
-    'youtube' => array(
-      'domain' => 'youtube.com',
-      'function' => 'video_embed_field_handle_youtube',
-      'defaults' => $ytdefaults,
-      'form' => 'video_embed_field_handler_youtube_form',
-      'title' => 'Youtube'
-    ), //include short form of youtube for sanity of users
-    'youtu.be' => array(
-      'domain' => 'youtu.be',
-      'defaults' => $ytdefaults,
-      'function' => 'video_embed_field_handle_youtube',
-      'title' => 'Youtube',
-    ),
-    'vimeo' => array(
-      'domain' => 'vimeo.com',
-      'function' => 'video_embed_field_handle_vimeo',
-      'defaults' => array(
-        'height' => 315,
-        'width' => 560,
-        'teaser_height' => 315,
-        'teaser_width' => 560,
-        'color' => '00adef',
-        'autoplay' => 0
-      ),
-      'form' => 'video_embed_field_handler_vimeo_form',
-      'title' => 'Vimeo'
-    )
-  );
-}
-
-
-/**
- *  Create a form from the player configuration options
- *  $defaults will be passed in with the default settings for the various fields
- */
-function video_embed_field_get_form($defaults){
-  $handlers = video_embed_get_handlers();
-  $form = array();
-  foreach($handlers as $domain=>$handler){
-    if(isset($handler['form']) && function_exists($handler['form'])){
-      $handler_defaults = isset($defaults[$handler['title']]) ? $defaults[$handler['title']] : array();
-      $handler_defaults = array_merge($handler['defaults'], $handler_defaults);
-      
-      $form[$handler['title']] = call_user_func($handler['form'], $handler_defaults);
-      
-      $form[$handler['title']] += array(
-        '#type' => 'fieldset',
-        '#title' => t($handler['title']),
-      );       
-    }
-  }
-  return $form;
-}
-
-/**
- *  handler for youtube videos
- */
-function video_embed_field_handle_youtube($url, $settings, $type='video', $image_size='small'){
-  //figure out the id of the video they want to play from the url
+function video_embed_field_video_embed_handler_info() {
+  $handlers = array();
   
-  //strip off the http
-  if(stristr($url, 'http://')) {
+  $handlers['youtube'] = array(
+    'title' => 'Youtube',
+    'function' => 'video_embed_field_handle_youtube',
+    'form' => 'video_embed_field_handler_youtube_form',
+    'domains' => array(
+      'youtube.com',
+      'youtu.be'
+    ),
+    'defaults' => array(
+      'width' => 640,
+      'height' => 360,
+      'autoplay' => 0,
+      'hd' => 1,
+      'rel' => 0,
+      'autohide' => 2,
+      'showinfo' => 1,
+      'theme' => 'dark',
+    ),
+  );
+  
+  $handlers['vimeo'] = array(
+    'title' => 'Vimeo',
+    'function' => 'video_embed_field_handle_vimeo',
+    'form' => 'video_embed_field_handler_vimeo_form',
+    'domains' => array(
+      'vimeo.com'
+    ),
+    'defaults' => array(
+      'width' => 640,
+      'height' => 360,
+      'color' => '00adef',
+      'autoplay' => 0,
+    ),
+  );
+  
+  return $handlers;
+}
+
+/**
+ * Handler for Youtube videos.
+ */
+function video_embed_field_handle_youtube($url, $settings) {
+  $output = array();
+  // Find the ID of the video they want to play from the url
+  if (stristr($url, 'http://')) {
     $url = substr($url, 7);
-  } else if(stristr($url, 'https://')){
+  }
+  else if (stristr($url, 'https://')) {
     $url = substr($url, 8);
   }
-
+  
   $pos = strripos($url, 'v=');
-  if($pos!== FALSE){ 
+  if ($pos!== FALSE) { 
     $pos += 2; 
     $pos2 = stripos($url, '&', $pos);
-  } else { 
+  }
+  else { 
     $pos = strripos($url, '/');
-    if($pos !== FALSE){ 
+    if ($pos !== FALSE) { 
       $pos++; 
       $pos2 = stripos($url, '?', $pos);
     }
   }
   
-  if($pos === FALSE){
-    //we can't figure out the url - just return the url as a link
-    return l($url, $url);
-  } else {
-    if($pos2 > 0){
+  if ($pos === FALSE) {
+    // We can't decode the URL - just return the URL as a link
+    $output['#markup'] = l($url, $url);
+    return $output;
+  }
+  else {
+    if ($pos2 > 0) {
       $id = substr($url, $pos, $pos2 - $pos);
-    } else {
+    }
+    else {
       $id = substr($url, $pos);
     }
   }
-  if($type == 'image'){
-    if ($image_size == 'large') {
-      return '<img src="'.'http://img.youtube.com/vi/'.$id.'/0.jpg'.'" />'; // large
-    }
-    else { // small and medium have same size for youtube
-      return '<img src="'.'http://img.youtube.com/vi/'.$id.'/2.jpg'.'" />'; // small
-    }
-  } else {
-    //get settings
-    $teaser = $type == 'teaser';
-    $height = $teaser ? $settings['teaser_height'] : $settings['height'];
-    $width = $teaser ? $settings['teaser_width'] : $settings['width'];
-    $hd = $settings['hd'];
-    $rel = $settings['rel'];
-    $autoplay = $settings['autoplay'];
-    $autohide = $settings['autohide']; 
-    $showinfo = $settings['showinfo'];
-    $theme = $settings['theme'];
-    
-    $template_start = '<iframe width="'.$width.'" height="'.$height.'" src="';
-    $template_end = '?hd='.$hd.'&amp;rel='.$rel.'&amp;wmode=opaque&amp;autoplay='.$autoplay.'&amp;theme='.$theme.'&amp;autohide='.$autohide.'&amp;showinfo='.$showinfo.'" frameborder="0" allowfullscreen></iframe>';
-    $url_temp = 'http://www.youtube.com/embed/';
-
-    return $template_start . $url_temp . $id . $template_end;
-  }
   
-}  
-/**
- *  Defines the form elements for the youtube configuration form
- *  Eventually it might be nice to have these forms be available per instance instead of just global config
- */
-function video_embed_field_handler_youtube_form($defaults){
-  $form = array();
+  // Construct the embed code
+  $settings['wmode'] = 'opaque';
+  $settings_str = _video_embed_code_get_settings_str($settings);
+  
+  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+  
+  return $output;
+}
 
-  $form['height'] = array(
-    '#type' => 'textfield',
-    '#size' => '5',
-    '#title' => t('Player Height'),
-    '#description' => t('The height of the youtube player, in pixels.  Only enter the number e.g. 349'),
-    '#default_value' => $defaults['height'],
-  );
+/**
+ * Defines the form elements for the Youtube configuration form.
+ */
+function video_embed_field_handler_youtube_form($defaults) {
+  $form = array();
+  
   $form['width'] = array(
     '#type' => 'textfield',
     '#size' => '5',
@@ -494,21 +524,13 @@ function video_embed_field_handler_youtube_form($defaults){
     '#description' => t('The width of the youtube player, in pixels.  Only enter the number e.g. 560'),
     '#default_value' => $defaults['width'],
   );
-  $form['teaser_height'] = array(
+  $form['height'] = array(
     '#type' => 'textfield',
     '#size' => '5',
-    '#title' => t('Player Height - Teaser'),
+    '#title' => t('Player Height'),
     '#description' => t('The height of the youtube player, in pixels.  Only enter the number e.g. 349'),
-    '#default_value' => $defaults['teaser_height'],
+    '#default_value' => $defaults['height'],
   );
-  $form['teaser_width'] = array(
-    '#type' => 'textfield',
-    '#size' => '5',
-    '#title' => t('Player Width - Teaser'),
-    '#description' => t('The width of the youtube player, in pixels.  Only enter the number e.g. 560'),
-    '#default_value' => $defaults['teaser_width'],
-  );
-  
   $form['theme'] = array(
     '#type' => 'select',
     '#options' => array(
@@ -518,7 +540,6 @@ function video_embed_field_handler_youtube_form($defaults){
     '#title' => t('Player theme'),
     '#default_value' => $defaults['theme'],
   );
-  
   $form['autoplay'] = array(
     '#type' => 'checkbox',
     '#title' => t('Autoplay'),
@@ -543,7 +564,6 @@ function video_embed_field_handler_youtube_form($defaults){
     '#description' => t('Display information like the video title and rating before the video starts playing.'),
     '#default_value' => $defaults['showinfo'],
   );
-  
   $form['autohide'] = array(
     '#type' => 'radios',
     '#options' => array(
@@ -560,72 +580,37 @@ function video_embed_field_handler_youtube_form($defaults){
 }
 
 /**
- *  handler for vimeo videos
- *  Height and width need to be configurable or something I think
+ * Handler for Vimeo videos.
  */
-function video_embed_field_handle_vimeo($url, $settings, $type = 'video', $image_size='small'){
+function video_embed_field_handle_vimeo($url, $settings) {
+  $output = array();
+  // Find the ID of the video they want to play from the url
   $pos = strripos($url, '/');
-  if($pos === FALSE){
-    //we can't figure out the url - just return the url as a link
-    return l($url, $url);
-  } else {
+  if ($pos === FALSE) {
+    // We can't decode the URL - just return the URL as a link
+    $output['#markup'] = l($url, $url);
+    return $output;
+  }
+  else {
     $pos+=1;
     $id = substr($url, $pos);
   }
   
-  if ($type == 'image') {
-    $return = file_get_contents('http://vimeo.com/api/v2/video/'.$id.'.php');
-    $return = unserialize($return);
-    $video = current($return);
-    // contains also thumbnail_medium, may want to check it
-    if ($image_size == 'large') {
-      $image_url = $video['thumbnail_large'];
-    } else if ($image_size == 'medium') {
-      $image_url = $video['thumbnail_medium'];
-    } else {
-      $image_url = $video['thumbnail_small'];
-    }
-    
-    return '<img src="'.$image_url.'" />';
-  } else {
-    //get configuration options
-    $teaser = $type == 'teaser';
-    $height = $teaser ? $settings['teaser_height'] : $settings['height'];
-    $width = $teaser ? $settings['teaser_width'] : $settings['width'];
-    $color = $settings['color'];
-    $autoplay = $settings['autoplay'];
-    
-    $template_start = '<iframe src="http://player.vimeo.com/video/';
-    $template_end = '?portrait=0&amp;color='.$color.'&amp;autoplay='.$autoplay.'" frameborder="0" height="'.$height.'" width="'.$width.'"></iframe>';
-    
-    return $template_start . $id . $template_end;
-  }
+  // Construct the embed code
+  $settings['portrait'] = 0;
+  $settings_str = _video_embed_code_get_settings_str($settings);
+  
+  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://player.vimeo.com/video/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+  
+  return $output;
 }
 
 /**
- *  Defines the form elements for the vimeo configuration form
+ * Defines the form elements for the Vimeo configuration form.
  */
-function video_embed_field_handler_vimeo_form($defaults){
-  //use base defaults to ensure that each setting has some default value - $defaults, the user entered values will override 
-  $base_defaults = array(
-    'height' => 315,
-    'width' => 560,
-    'teaser_height' => 315,
-    'teaser_width' => 560,
-    'color' => '00adef',
-    'autoplay' => 0
-  );
-  $defaults = array_merge($base_defaults, $defaults);
-  
+function video_embed_field_handler_vimeo_form($defaults) {
   $form = array();
   
-  $form['height'] = array(
-    '#type' => 'textfield',
-    '#size' => '5',
-    '#title' => t('Player Height'),
-    '#description' => t('The height of the vimeo player, in pixels.  Only enter the number e.g. 315'),
-    '#default_value' => $defaults['height'],
-  );
   $form['width'] = array(
     '#type' => 'textfield',
     '#size' => '5',
@@ -633,21 +618,13 @@ function video_embed_field_handler_vimeo_form($defaults){
     '#description' => t('The width of the vimeo player, in pixels.  Only enter the number e.g. 560'),
     '#default_value' => $defaults['width'],
   );
-  $form['teaser_height'] = array(
+  $form['height'] = array(
     '#type' => 'textfield',
     '#size' => '5',
-    '#title' => t('Player Height - Teaser'),
+    '#title' => t('Player Height'),
     '#description' => t('The height of the vimeo player, in pixels.  Only enter the number e.g. 315'),
-    '#default_value' => $defaults['teaser_height'],
+    '#default_value' => $defaults['height'],
   );
-  $form['teaser_width'] = array(
-    '#type' => 'textfield',
-    '#size' => '5',
-    '#title' => t('Player Width - Teaser'),
-    '#description' => t('The width of the vimeo player, in pixels.  Only enter the number e.g. 560'),
-    '#default_value' => $defaults['teaser_width'],
-  );
-  
   $form['color'] = array(
     '#type' => 'select',
     '#options' => array(
@@ -667,40 +644,127 @@ function video_embed_field_handler_vimeo_form($defaults){
     '#description' => t('Play the video immediately.'),
     '#default_value' => $defaults['autoplay'],
   );
+  
   return $form;
 }
 
 /**
- *  Implementation of hook_requirements
- *  Warn users if they are using the default settings because they haven't updated their fields
+ * Implements hook_filter_info().
  */
-function video_embed_field_requirements($phase){
-  if($phase == 'runtime'){
-    $fields = array_filter(field_info_fields(), '_video_embed_field_array_filter');
+function video_embed_field_filter_info() {
+  $filters['video_embed_field'] = array(
+    'title' => t('Video Embedding'),
+    'description' => t('Replaces [VIDEO::http://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.'),
+    'process callback'  => 'video_embed_field_filter_process',
+  );
+  
+  return $filters;
+}
+
+/**
+ * Video Embed Field filter process callback.
+ */
+function video_embed_field_filter_process($text, $filter, $format) {
+  preg_match_all('/ \[VIDEO:: ( [^\[\]]+ )* \] /x', $text, $matches);
+  
+  $tag_match = (array) array_unique($matches[1]);
+  $handlers = video_embed_get_handlers();
+  
+  foreach ($tag_match as $tag) {
+    $parts = explode('::', $tag);
     
-    $errors = array();
-    foreach($fields as $field_name => $field){
-      $instances = field_read_instances(array('field_name' => $field_name));
-      
-      foreach($instances as $key => $instance){
-        if (!isset($instance['settings']['playbacksettings'])) {
-          $errors[] = $instance['field_name'] . ' on ' . $instance['entity_type'] . ' type ' . $instance['bundle'];
-        }
+    // Get video style
+    if (isset($parts[1])) {
+      $style = $parts[1];
+    }
+    else {
+      $style = 'normal';
+    }
+    
+    $embed_code = theme('video_embed_field_embed_code', array('url' => $parts[0], 'style' => $style));
+    
+    $text = str_replace('[VIDEO::' . $tag . ']', $embed_code, $text);
+  }
+  
+  return $text;
+}
+
+/**
+ * Returns HTML for an embedded video.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - url: The video URL.
+ *   - style: The video style to use.
+ *
+ * @ingroup themeable
+ */
+function theme_video_embed_field_embed_code($variables) {
+  $output = array();
+  $style = video_embed_field_video_style_load($variables['style']);
+  
+  // If there was an issue load in the default style
+  if ($style == FALSE) {
+    $style = video_embed_field_video_style_load('normal');
+  }
+  
+  // Process video URL
+  $url = $variables['url'];
+  if (!stristr($url, 'http://') && !stristr($url, 'https://')) {
+    $url = 'http://' . $url;
+  }
+  $parts = parse_url($url);
+  if (!isset($parts['host'])) {
+    $output['#markup'] = l($item['video_url'], $item['video_url']);
+    return $output;
+  }
+  
+  $host = $parts['host'];
+  if (stripos($host, 'www.') > -1) {
+    $host = substr($host, 4);
+  }
+  
+  $domains = _video_embed_field_get_provider_domains();
+  $handlers = video_embed_get_handlers();
+  $handler_name = $domains[$host];
+  $handler = $handlers[$handler_name];
+  
+  if (isset($handler['function']) && function_exists($handler['function'])) {
+    $output['embed_code'] = call_user_func($handler['function'], $url, $style['settings'][$handler_name]);
+  }
+  
+  return drupal_render($output);
+}
+
+/**
+ * Fetch all available provider domains.
+ */
+function _video_embed_field_get_provider_domains() {
+  $domains = array();
+  
+  $handlers = video_embed_get_handlers();
+  foreach ($handlers as $name => $handler) {
+    if (isset($handler['function']) && function_exists($handler['function'])) {
+      foreach ($handler['domains'] as $domain) {
+        $domains[$domain] = $name;
       }
     }
-    
-    if(!empty($errors)){
-      $requirements = array(
-        'video_embed_field' => array(
-          'description' =>  t('Some video_embed_fields are using the old settings format.  You will need to go set the preferences for each field manually. '),
-          'severity' => REQUIREMENT_ERROR,
-          'title' => t('Video Embed Field settings:'),
-          'value' => implode(', ', $errors),
-        ),
-      );
-      return $requirements;
-    }
   }
+  
+  return $domains;
+}
+
+/**
+ * Fetch settings string
+ */
+function _video_embed_code_get_settings_str($settings = array()) {
+  $values = array();
+  
+  foreach ($settings as $name => $value) {
+    $values[] = $name . '=' . $value;
+  }
+  
+  return implode('&amp;', $values);
 }
 
 //used to array filter in video_embed_field_requirements
