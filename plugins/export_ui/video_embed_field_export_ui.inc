@@ -24,7 +24,6 @@ $plugin = array(
   // Define the names of the functions that provide the add/edit forms.
   'form' => array(
     'settings' => 'video_embed_field_video_style_form',
-    'submit' => 'video_embed_field_video_style_form_submit',
     // 'submit' and 'validate' are also valid callbacks.
   ),
 );

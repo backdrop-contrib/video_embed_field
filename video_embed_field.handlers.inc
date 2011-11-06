@@ -14,6 +14,7 @@ function video_embed_field_video_embed_handler_info() {
   $handlers['youtube'] = array(
     'title' => 'Youtube',
     'function' => 'video_embed_field_handle_youtube',
+    'thumbnail_function' => 'video_embed_field_handle_youtube_thumbnail',
     'form' => 'video_embed_field_handler_youtube_form',
     'domains' => array(
       'youtube.com',
@@ -34,6 +35,7 @@ function video_embed_field_video_embed_handler_info() {
   $handlers['vimeo'] = array(
     'title' => 'Vimeo',
     'function' => 'video_embed_field_handle_vimeo',
+    'thumbnail_function' => 'video_embed_field_handle_vimeo_thumbnail',
     'form' => 'video_embed_field_handler_vimeo_form',
     'domains' => array(
       'vimeo.com'
@@ -50,10 +52,10 @@ function video_embed_field_video_embed_handler_info() {
 }
 
 /**
- * Handler for Youtube videos.
+ *  Helper function to get the youtube video's id
+ *  Returns false if it doesn't parse for wahtever reason
  */
-function video_embed_field_handle_youtube($url, $settings) {
-  $output = array();
+function _video_embed_field_get_youtube_id($url){
   // Find the ID of the video they want to play from the url
   if (stristr($url, 'http://')) {
     $url = substr($url, 7);
@@ -76,9 +78,7 @@ function video_embed_field_handle_youtube($url, $settings) {
   }
   
   if ($pos === FALSE) {
-    // We can't decode the URL - just return the URL as a link
-    $output['#markup'] = l($url, $url);
-    return $output;
+    return FALSE;
   }
   else {
     if ($pos2 > 0) {
@@ -88,7 +88,21 @@ function video_embed_field_handle_youtube($url, $settings) {
       $id = substr($url, $pos);
     }
   }
+  return $id;
+}
+
+/**
+ * Handler for Youtube videos.
+ */
+function video_embed_field_handle_youtube($url, $settings) {
+  $output = array();
   
+  $id = _video_embed_field_get_youtube_id($url);
+  if (!$id) {
+    // We can't decode the URL - just return the URL as a link
+    $output['#markup'] = l($url, $url);
+    return $output;
+  }
   // Construct the embed code
   $settings['wmode'] = 'opaque';
   $settings_str = _video_embed_code_get_settings_str($settings);
@@ -96,6 +110,20 @@ function video_embed_field_handle_youtube($url, $settings) {
   $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
   
   return $output;
+}
+
+/**
+ *  Get the thumbnail url for youtube videos
+ */
+function video_embed_field_handle_youtube_thumbnail($video_url){
+  $info = array();
+  
+  $id = _video_embed_field_get_youtube_id($video_url);
+  if ($id) {
+    $info['id'] = $id;
+    $info['url'] = 'http://img.youtube.com/vi/'.$id.'/0.jpg';
+  }
+  return $info;
 }
 
 /**
@@ -190,6 +218,32 @@ function video_embed_field_handle_vimeo($url, $settings) {
   $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://player.vimeo.com/video/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
   
   return $output;
+}
+
+/**
+ *  Get the thumbnail url for youtube videos
+ */
+function video_embed_field_handle_vimeo_thumbnail($video_url){
+  $pos = strripos($url, '/');
+  if($pos === FALSE){
+    $id = FALSE;
+  } else {
+    $pos+=1;
+    $id = substr($url, $pos);
+  }
+  $info = array(
+    'id' => $id,
+  );
+  
+  $return = file_get_contents('http://vimeo.com/api/v2/video/'.$id.'.php');
+  $return = unserialize($return);
+  $video = current($return);
+  
+  $image_url = $video['thumbnail_large'];
+
+  $info['url'] = $image_url;
+  
+  return $info;
 }
 
 /**

@@ -133,31 +133,6 @@ function video_embed_field_video_style_load($name = NULL, $vsid = NULL) {
 }
 
 /**
- * Flush cached video styles.
- *
- * @param $style
- *   A video style array.
- */
-function video_embed_field_video_style_flush($style) {
-  // Let other modules update as necessary on flush.
-  module_invoke_all('video_embed_field_video_style_flush', $style);
-  
-  // Clear image style and effect caches.
-  cache_clear_all('video_embed_field_video_styles', 'cache', TRUE);
-  drupal_static_reset('video_embed_field_video_styles');
-  
-  // Clear field caches so that formatters may be added for this style.
-  field_info_cache_clear();
-  drupal_theme_rebuild();
-  
-  // Clear page caches when flushing.
-  if (module_exists('block')) {
-    cache_clear_all('*', 'cache_block', TRUE);
-  }
-  cache_clear_all('*', 'cache_page', TRUE);
-}
-
-/**
  * Implements hook_permission().
  */
 function video_embed_field_permission() {
@@ -204,6 +179,33 @@ function video_embed_get_handlers() {
   return $handlers;
 }
 
+function video_embed_get_handler($url){
+  // Process video URL
+  if (!stristr($url, 'http://') && !stristr($url, 'https://')) {
+    $url = 'http://' . $url;
+  }
+  $parts = parse_url($url);
+  if (!isset($parts['host'])) {
+    return FALSE;
+  }
+  
+  $host = $parts['host'];
+  if (stripos($host, 'www.') > -1) {
+    $host = substr($host, 4);
+  }
+  
+  $domains = _video_embed_field_get_provider_domains();
+  $handlers = video_embed_get_handlers();
+  if (isset($domains[$host])) {
+    $handler_name = $domains[$host];
+    $handler = $handlers[$handler_name];
+    $handler['name'] = $handler_name;
+    return $handler;
+  } else {
+    return FALSE;
+  }  
+}
+
 /**
  * Create a form from the player configuration options
  * $defaults will be passed in with the default settings for the various fields
@@ -229,6 +231,27 @@ function video_embed_field_get_form($defaults) {
   }
 
   return $form;
+}
+
+/**
+ * Get an array of image styles suitable for using as select list options.
+ *
+ * @param $include_empty
+ *   If TRUE a <none> option will be inserted in the options array.
+ * @return
+ *   Array of image styles both key and value are set to style name.
+ */
+function video_embed_field_video_style_options($include_empty = TRUE) {
+  $styles = video_embed_field_video_styles();
+  $options = array();
+  if ($include_empty && !empty($styles)) {
+    $options[''] = t('<none>');
+  }
+  $options = array_merge($options, drupal_map_assoc(array_keys($styles)));
+  if (empty($options)) {
+    $options[''] = t('No defined styles');
+  }
+  return $options;
 }
 
 /**
@@ -291,32 +314,34 @@ function theme_video_embed_field_embed_code($variables) {
     $style = video_embed_field_video_style_load('normal');
   }
   
-  // Process video URL
+  $handler = video_embed_get_handler($variables['url']);
   $url = $variables['url'];
   if (!stristr($url, 'http://') && !stristr($url, 'https://')) {
     $url = 'http://' . $url;
   }
-  $parts = parse_url($url);
-  if (!isset($parts['host'])) {
+  
+  if ($handler && isset($handler['function']) && function_exists($handler['function'])) {
+    $output['embed_code'] = call_user_func($handler['function'], $url, $style->data[$handler['name']]);
+  } else {
     $output['#markup'] = l($item['video_url'], $item['video_url']);
-    return $output;
-  }
-  
-  $host = $parts['host'];
-  if (stripos($host, 'www.') > -1) {
-    $host = substr($host, 4);
-  }
-  
-  $domains = _video_embed_field_get_provider_domains();
-  $handlers = video_embed_get_handlers();
-  $handler_name = $domains[$host];
-  $handler = $handlers[$handler_name];
-
-  if (isset($handler['function']) && function_exists($handler['function'])) {
-    $output['embed_code'] = call_user_func($handler['function'], $url, $style->data[$handler_name]);
   }
   
   return drupal_render($output);
+}
+
+/**
+ *  Get the thumbnail url for a given video url
+ *  @param $url - the url of the video
+ *  @return a string representing the url of the thumbnail, or FALSE on error
+ */
+function video_embed_field_thumbnail_url($url){
+  $handler = video_embed_get_handler($url);
+  if ($handler && isset($handler['thumbnail_function']) && function_exists($handler['thumbnail_function'])) {
+    $info = call_user_func($handler['thumbnail_function'], $url);
+    $info['handler'] = $handler['name'];
+    return $info;
+  }
+  return FALSE;
 }
 
 /**

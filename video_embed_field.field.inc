@@ -131,6 +131,34 @@ function video_embed_field_field_validate($entity_type, $entity, $field, $instan
 }
 
 /**
+ *  Implementation of hook_field_prepare_view().
+ *
+ *  Download and save the thumbnail if it hasn't already been stored
+ */
+function video_embed_field_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  foreach($items as $delta => $item){
+  
+    $info = video_embed_field_thumbnail_url($item['video_url']);
+    
+    if (isset($info['url']) && $info['url']) {
+      $thumb_url = $info['url'];
+
+      $local_path = 'public://video_embed_field_thumbnails/' . $info['handler'] . '/' . $info['id'] . '.jpg';
+      if (!file_exists($local_path)) {
+        $dirname = drupal_dirname($local_path);
+        file_prepare_directory($dirname, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+        @copy($thumb_url, $local_path);
+      }
+      
+      $items[$delta]['thumbnail_path'] = $local_path;
+    } //couldn't get the thumbnail for whatever reason
+    else {
+      $items[$delta]['thumbnail_path'] = ''; 
+    }
+  
+  }
+}
+/**
  * Implements of hook_field_is_empty().
  */
 function video_embed_field_field_is_empty($item, $field){
@@ -147,6 +175,11 @@ function video_embed_field_field_formatter_info() {
       'field types' => array('video_embed_field'),
       'settings' => array('video_style' => 'normal', 'description' => 1),
     ),
+    'video_embed_field_thumbnail' => array(
+      'label' => t('Thumbnail Preview'),
+      'field types' => array('video_embed_field'),
+      'settings' => array('image_style' => 'none', 'description' => 1),
+    ),
   );
 }
 
@@ -156,14 +189,26 @@ function video_embed_field_field_formatter_info() {
 function video_embed_field_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
+  $element = array();
   
-  $video_styles = video_embed_field_video_style_options(FALSE);
-  $element['video_style'] = array(
-    '#title' => t('Video style'),
-    '#type' => 'select',
-    '#default_value' => $settings['video_style'],
-    '#options' => $video_styles,
-  );
+  if ($display['type'] == 'video_embed_field') {
+    $video_styles = video_embed_field_video_style_options(FALSE);
+    $element['video_style'] = array(
+      '#title' => t('Video style'),
+      '#type' => 'select',
+      '#default_value' => $settings['video_style'],
+      '#options' => $video_styles,
+    );
+  } 
+  else if ($display['type'] == 'video_embed_field_thumbnail') {
+    $element['image_style'] = array(
+      '#title' => t('Image style'),
+      '#type' => 'select',
+      '#options' => image_style_options(FALSE),
+      '#default_value' => $settings['image_style'],
+      '#empty_option' => t('None (original image)'),
+    ); 
+  }
   
   if ($instance['settings']['description_field']) {
     $element['description'] = array(
@@ -173,7 +218,6 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
       '#options' => array(1 => t('Yes'), 0 => t('No')),
     );
   }
-  
   return $element;
 }
 
@@ -183,14 +227,24 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
 function video_embed_field_field_formatter_settings_summary($field, $instance, $view_mode) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
-  
+
   $summary = array();
-  
-  $video_styles = video_embed_field_video_style_options(FALSE);
-  // Styles could be lost because of enabled/disabled modules that defines
-  // their styles in code.
-  if (isset($video_styles[$settings['video_style']])) {
-    $summary[] = t('Video style: @style', array('@style' => $video_styles[$settings['video_style']]));
+  if($display['type'] == 'video_embed_field'){
+    $video_styles = video_embed_field_video_style_options(FALSE);
+    // Styles could be lost because of enabled/disabled modules that defines
+    // their styles in code.
+    if (isset($video_styles[$settings['video_style']])) {
+      $summary[] = t('Video style: @style', array('@style' => $video_styles[$settings['video_style']]));
+    }
+  } 
+  else if ($display['type'] == 'video_embed_field_thumbnail') {
+    $image_styles = image_style_options(FALSE);
+    if (isset($image_styles[$settings['image_style']])) {
+      $summary[] = t('Image style: @style', array('@style' => $image_styles[$settings['image_style']]));
+    } //No Image style (original image)  
+    else {
+      $summary[] = t('Original Image.');
+    }
   }
   
   if ($settings['description'] && $instance['settings']['description_field']) {
@@ -201,12 +255,13 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
 }
 
 /**
- * Implements hook_field_widget_form().
+ * Implements hook_field_formatter_view().
  */
 function video_embed_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display){
   $element = array();
   
   foreach ($items as $delta => $item) {
+    //create the render array for the description
     if (isset($item['description']) && $item['description'] && $display['settings']['description'] && $instance['settings']['description_field']) {
       $description = array(
         '#prefix' => '<div class="video-embed-description">',
@@ -217,16 +272,36 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     else {
       $description = array();
     }
-    
-    $element[$delta] = array(
-      array(
-        '#theme' => 'video_embed_field_embed_code',
-        '#url' => $item['video_url'],
-        '#style' => $display['settings']['video_style'],
-      ),
-      $description,
-    );
+    //Render the field
+    if ($display['type'] == 'video_embed_field') {
+      $element[$delta] = array(
+        array(
+          '#theme' => 'video_embed_field_embed_code',
+          '#url' => $item['video_url'],
+          '#style' => $display['settings']['video_style'],
+        ),
+        $description,
+      );
+    }
+    else if ($display['type'] == 'video_embed_field_thumbnail') {
+      drupal_set_message('<pre>'.print_r($item, true).'</pre>');
+      if (isset($item['thumbnail_path'])) {
+        $element[$delta] = array(
+          array(
+            '#theme' => 'image_style',
+            '#path' => $item['thumbnail_path'],
+            '#style_name' => $display['settings']['image_style'],
+          ),
+          $description,
+        );      
+      } //incase no thumbnail was downloaded / provider doesn't support thumbnails
+      else {
+        $element[$delta] = array(
+          $description,
+        );    
+      }
+    }
   }
-  
+
   return $element;
 }

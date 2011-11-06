@@ -23,21 +23,8 @@ function video_embed_field_video_style_form(&$form, &$form_state) {
   $form['data'] = array(
     '#type' => 'vertical_tabs',
     '#title' => t('Playback settings'),
+    '#tree' => TRUE,
   ) + $parser_form; //add in our extra settings
 
   return $form;
-}
-
-/**
- * Submit handler for adding a new image style.
- */
-function video_embed_field_video_style_form_submit($form, &$form_state) {
-  //for some reason drupal doesn't want to group the stuff in the vertical tabs inside of values
-  $data = array();
-  foreach (array_keys($form['data']) as $key) {
-    if (strpos($key, '#') !== 0 && isset($form_state['values'][$key])) {
-      $data[$key] = $form_state['values'][$key];
-    }
-  }
-  $form_state['item']->data = $data;
 }

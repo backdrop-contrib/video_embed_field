@@ -17,6 +17,11 @@ function video_embed_field_field_schema($field){
           'length' => 512,
           'default' => ''
         ),
+        'thumbnail_path' => array(
+          'type' => 'varchar',
+          'length' => 512,
+          'default' => ''
+        ),
         'embed_code' => array(
           'type' => 'varchar',
           'length' => 1024,
@@ -134,4 +139,41 @@ function video_embed_field_update_7001() {
   }
   
   return t('Video styles storage table created.');
+}
+/**  
+ *  Update 7002
+ *  Add field for storing the path to the video thumbnail
+ */
+function video_embed_field_update_7002() {
+  // Get the list of fields of type 'video_embed_field'.
+  $video_embed_fields = array();
+  foreach (field_info_fields() as $field_name => $field_info) {
+    if ($field_info['type'] == 'video_embed_field') {
+      $video_embed_fields[$field_name] = field_read_field($field_name);
+    }
+  }
+  
+  foreach ($video_embed_fields as $field) {
+    if ($field['deleted']) {
+      $table = "field_deleted_data_{$field['id']}";
+      $revision_table = "field_deleted_revision_{$field['id']}";
+    }
+    else {
+      $table = "field_data_{$field['field_name']}";
+      $revision_table = "field_revision_{$field['field_name']}";
+    }
+    $column = $field['field_name'] . '_' . 'thumbnail_path';
+    db_add_field($table, $column, array(
+      'type' => 'varchar',
+      'length' => 512,
+      'default' => ''
+    ));
+    db_add_field($revision_table, $column, array(
+      'type' => 'varchar',
+      'length' => 512,
+      'default' => ''
+    ));
+  }
+  
+  return t('Thumbnail column added.');
 }
