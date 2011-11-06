@@ -223,7 +223,7 @@ function video_embed_field_handle_vimeo($url, $settings) {
 /**
  *  Get the thumbnail url for youtube videos
  */
-function video_embed_field_handle_vimeo_thumbnail($video_url){
+function video_embed_field_handle_vimeo_thumbnail($url){
   $pos = strripos($url, '/');
   if($pos === FALSE){
     $id = FALSE;
