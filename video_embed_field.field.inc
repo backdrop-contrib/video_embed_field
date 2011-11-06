@@ -284,7 +284,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
       );
     }
     else if ($display['type'] == 'video_embed_field_thumbnail') {
-      drupal_set_message('<pre>'.print_r($item, true).'</pre>');
+
       if (isset($item['thumbnail_path'])) {
         $element[$delta] = array(
           array(
