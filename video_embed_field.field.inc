@@ -139,12 +139,11 @@ function video_embed_field_field_presave($entity_type, $entity, $field, $instanc
   foreach($items as $delta => $item){
   
     $info = video_embed_field_thumbnail_url($item['video_url']);
-    drupal_set_message('<pre>'.print_r($info, true).'</pre>');
+
     if (isset($info['url']) && $info['url']) {
       $thumb_url = $info['url'];
       
       $local_path = 'public://video_embed_field_thumbnails/' . $info['handler'] . '/' . $info['id'] . '.jpg';
-      drupal_set_message('<pre>'.print_r($local_path, true).'</pre>');
       if (!file_exists($local_path)) {
         $dirname = drupal_dirname($local_path);
         file_prepare_directory($dirname, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
@@ -263,7 +262,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
   
   foreach ($items as $delta => $item) {
     //create the render array for the description
-    if (isset($item['description']) && $item['description'] && $display['settings']['description'] && $instance['settings']['description_field']) {
+    if (!empty($item['description']) && $display['settings']['description'] && $instance['settings']['description_field']) {
       $description = array(
         '#prefix' => '<div class="video-embed-description">',
         '#markup' => $item['description'],
