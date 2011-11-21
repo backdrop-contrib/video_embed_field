@@ -286,7 +286,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     }
     else if ($display['type'] == 'video_embed_field_thumbnail') {
       $image_style = $display['settings']['image_style'];
-      if (isset($item['thumbnail_path']) && $image_style == '') {
+      if (isset($item['thumbnail_path']) && ($image_style == 'none' || $image_style == '')) {
         $element[$delta] = array(
           array(
             '#theme' => 'image',
