@@ -149,10 +149,6 @@ function video_embed_field_permission() {
  */
 function video_embed_field_theme() {
   return array(
-    // Theme functions in video_embed_field.admin.inc.
-    'video_embed_field_video_style_list' => array(
-      'variables' => array('styles' => NULL),
-    ),
     'video_embed_field_embed_code' => array(
       'variables' => array('url' => NULL, 'style' => 'normal'),
     ),
@@ -373,9 +369,4 @@ function _video_embed_code_get_settings_str($settings = array()) {
   }
   
   return implode('&amp;', $values);
-}
-
-//used to array filter in video_embed_field_requirements
-function _video_embed_field_array_filter($item) {
-  return (isset($item['type']) && $item['type'] == 'video_embed_field');
 }
