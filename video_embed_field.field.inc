@@ -65,12 +65,12 @@ function video_embed_field_field_widget_info() {
 function video_embed_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   // Don't need to check the type right now because we're only defining one
   $element += array(
-    '#type' => 'video_embed_field_widget'
+    '#type' => 'fieldset'
   );
   
   $element['video_url'] = array(
     '#type' => 'textfield',
-    '#title' => t('URL'),
+    '#title' => t('Video URL'),
     '#description' => $element['#description'],
     '#attributes' => array('class' => array('video_embed_url')),
     '#attached' => array( 
@@ -91,7 +91,7 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
       '#description' => t('The description which may be used as a label.'),
     );
   }
-  
+
   return $element;
 }
 
