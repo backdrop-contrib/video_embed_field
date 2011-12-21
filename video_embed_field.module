@@ -345,8 +345,6 @@ function theme_video_embed_field_embed_code($variables) {
  * @ingroup themeable
  */
 function theme_video_embed_field_colorbox_code($variables) {
-  $output = array();
-
   $style = video_embed_field_video_style_load($variables['video_style']);
 
   // If there was an issue load in the default style
@@ -361,12 +359,36 @@ function theme_video_embed_field_colorbox_code($variables) {
   //Create a unique ID for colorbox inline
   $id = 'video-embed-field-' . uniqid('video_embed_field');
 
-  $image = theme('image_style', array('path' => $variables['image_url'], 'style_name' => $variables['image_style']));
-  $video = '<div style="display: none"><div id="' . $id .'">' . theme('video_embed_field_embed_code', array('style' => $variables['video_style'], 'url' => $variables['video_url'])) . '</div></div>';
+  if($variables['image_style'] == 'none'){
+    $image = array(
+      array(
+        '#theme' => 'image',
+        '#path' => $variables['image_url'],
+      ),
+    );
+  }
+  else {
+    $image = array(
+      '#theme' => 'image_style',
+      '#path' => $variables['image_url'], 
+      '#style_name' => $variables['image_style'],
+    );
+  }
+  
+  $video = array(
+    '#prefix' => '<div style="display:none"><div id="' . $id . '">',
+    '#suffix' => '</div></div>',
+    '#theme' => 'video_embed_field_embed_code',
+    '#style' => $variables['video_style'],
+    '#url' => $variables['video_url'],
+  );
+  
+  $image = drupal_render($image);
+  $video = drupal_render($video);
+  
+  $output = l($image . $video, "?width=" . ($data['width']+5) . "&height=" . ($data['height']+20) . "&inline=true#" . $id , array('html' => true, 'external' => true, 'attributes' => array('class' => array('colorbox-load', 'colorbox-inline'))));  
 
-  $output['#markup'] = l($image . $video, "?width=" . ($data['width']+5) . "&height=" . ($data['height']+20) . "&inline=true#" . $id , array('html' => true, 'external' => true, 'attributes' => array('class' => array('colorbox-load', 'colorbox-inline'))));  
-
-  return drupal_render($output);
+  return $output;
 }
 /**
  *  Get the thumbnail url for a given video url

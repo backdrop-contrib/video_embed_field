@@ -294,14 +294,25 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     else if ($display['type'] == 'video_embed_field_thumbnail') {
 
       if (isset($item['thumbnail_path'])) {
-        $element[$delta] = array(
-          array(
-            '#theme' => 'image_style',
-            '#path' => $item['thumbnail_path'],
-            '#style_name' => $display['settings']['image_style'],
-          ),
-          $description,
-        );
+        if($display['settings']['image_style'] == 'none'){
+          $element[$delta] = array(
+            array(
+              '#theme' => 'image',
+              '#path' => $item['thumbnail_path'],
+            ),
+            $description,
+          );
+        }
+        else {
+          $element[$delta] = array(
+            array(
+              '#theme' => 'image_style',
+              '#path' => $item['thumbnail_path'],
+              '#style_name' => $display['settings']['image_style'],
+            ),
+            $description,
+          );
+        }
       } //incase no thumbnail was downloaded / provider doesn't support thumbnails
       else {
         $element[$delta] = array(

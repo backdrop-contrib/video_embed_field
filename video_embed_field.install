@@ -177,3 +177,10 @@ function video_embed_field_update_7002() {
   
   return t('Thumbnail column added.');
 }
+
+/**
+ *  Enable inline colorbox support if colorbox is installed
+ */
+function video_embed_field_update_7003() {
+  variable_set('colorbox_inline', 1);
+}
