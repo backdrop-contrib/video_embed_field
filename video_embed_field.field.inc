@@ -71,7 +71,6 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
   $element['video_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Video URL'),
-    '#description' => $element['#description'],
     '#attributes' => array('class' => array('video_embed_url')),
     '#attached' => array( 
       'css' => array( 
