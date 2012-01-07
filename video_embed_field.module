@@ -17,6 +17,7 @@ module_load_include('inc', 'video_embed_field', 'video_embed_field.field');
 module_load_include('inc', 'video_embed_field', 'video_embed_field.admin');
 // Load our default handlers
 module_load_include('inc', 'video_embed_field', 'video_embed_field.handlers');
+
 /**
  * Implementation of hook_ctools_plugin_directory().
  */
@@ -69,6 +70,22 @@ function video_embed_field_default_video_embed_styles() {
   return array($normal, $teaser);
 }
 
+/**
+ * Implements hook_menu().
+ */
+function video_embed_field_menu() {
+  $items = array();
+  
+  $items['vef/load/%'] = array(
+    'title' => 'Video Embed Field - Load Video',
+    'page callback' => '_video_embed_field_load_video',
+    'page arguments' => array(2),
+    'access arguments' => TRUE, 
+    'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+}
 
 /**
  * Get an array of all styles and their settings.
@@ -346,19 +363,19 @@ function theme_video_embed_field_embed_code($variables) {
  */
 function theme_video_embed_field_colorbox_code($variables) {
   $style = video_embed_field_video_style_load($variables['video_style']);
-
+  
   // If there was an issue load in the default style
   if ($style == FALSE) {
     $style = video_embed_field_video_style_load('normal');
   }
-
+  
   $handler = video_embed_get_handler($variables['video_url']);
-
+  
   $data = $style->data[$handler['name']];
-
+  
   //Create a unique ID for colorbox inline
-  $id = 'video-embed-field-' . uniqid('video_embed_field');
-
+  $id = uniqid('video_embed_field-' . rand());
+  
   if($variables['image_style'] == 'none'){
     $image = array(
       array(
@@ -386,10 +403,17 @@ function theme_video_embed_field_colorbox_code($variables) {
   $image = drupal_render($image);
   $video = drupal_render($video);
   
-  $output = l($image . $video, "?width=" . ($data['width']+5) . "&height=" . ($data['height']+20) . "&inline=true#" . $id , array('html' => true, 'external' => true, 'attributes' => array('class' => array('colorbox-load', 'colorbox-inline'))));  
-
+  // Write values to session for later AJAX load
+  $_SESSION['video_embed_field'][$id] = array(
+    'video_url' => $variables['video_url'],
+    'video_style' => $variables['video_style'],
+  );
+  
+  $output = l($image, base_path() . '?q=vef/load/' . $id . '&width=' . ($data['width']) . '&height=' . ($data['height']+3), array('html' => true, 'external' => true, 'attributes' => array('class' => array('colorbox-load'))));  
+  
   return $output;
 }
+
 /**
  *  Get the thumbnail url for a given video url
  *  @param $url - the url of the video
@@ -439,4 +463,19 @@ function _video_embed_code_get_settings_str($settings = array()) {
 //used to array filter in video_embed_field_requirements
 function _video_embed_field_array_filter($item) {
   return (isset($item['type']) && $item['type'] == 'video_embed_field');
+}
+
+/**
+ * Loads a video to returning via AJAX
+ */
+function _video_embed_field_load_video($id) {
+  $data = $_SESSION['video_embed_field'][$id];
+  
+  $video = array(
+    '#theme' => 'video_embed_field_embed_code',
+    '#style' => $data['video_style'],
+    '#url' => $data['video_url'],
+  );
+  
+  print drupal_render($video);
 }

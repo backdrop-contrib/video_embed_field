@@ -6,9 +6,3 @@ configure = admin/config/media/vef_video_styles
 
 dependencies[] = ctools
 dependencies[] = image
-; Information added by drupal.org packaging script on 2011-11-07
-version = "7.x-2.x-dev"
-core = "7.x"
-project = "video_embed_field"
-datestamp = "1320625938"
-
