@@ -189,6 +189,6 @@ function video_embed_field_update_7003() {
 /**
  *  Enable colorbox load support if colorbox is installed, we no longer need inline support
  */
-function video_embed_field_update_7003() {
+function video_embed_field_update_7004() {
   variable_set('colorbox_load', 1);
 }
