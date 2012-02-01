@@ -67,14 +67,20 @@ function _video_embed_field_get_youtube_id($url){
   
   $pos = strripos($url, 'v=');
   if ($pos!== FALSE) { 
-    $pos += 2; 
+    $pos += 2;
     $pos2 = stripos($url, '&', $pos);
+    $pos_hash = stripos($url, '#', $pos);
+    
+    $pos2 = $pos2 === FALSE ? $pos_hash: min($pos2, $pos_hash);
   }
   else { 
     $pos = strripos($url, '/');
     if ($pos !== FALSE) { 
       $pos++; 
       $pos2 = stripos($url, '?', $pos);
+      $pos_hash = stripos($url, '#', $pos);
+      
+      $pos2 = $pos2 === FALSE ? $pos_hash: min($pos2, $pos_hash);
     }
   }
   
@@ -130,6 +136,7 @@ function video_embed_field_handle_youtube_thumbnail($video_url){
   $info = array();
   
   $id = _video_embed_field_get_youtube_id($video_url);
+  
   if ($id) {
     $info['id'] = $id;
     $info['url'] = 'http://img.youtube.com/vi/'.$id.'/0.jpg';
