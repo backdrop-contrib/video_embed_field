@@ -28,6 +28,7 @@ function video_embed_field_video_embed_handler_info() {
       'rel' => 0,
       'autohide' => 2,
       'showinfo' => 1,
+      'modestbranding' => 0,
       'theme' => 'dark',
     ),
   );
@@ -178,6 +179,12 @@ function video_embed_field_handler_youtube_form($defaults) {
     '#title' => t('Show info'),
     '#description' => t('Display information like the video title and rating before the video starts playing.'),
     '#default_value' => $defaults['showinfo'],
+  );
+  $form['modestbranding'] = array(
+  	'#type' => 'checkbox',
+  	'#title' => t('Hide Youtube logo'),
+  	'#description' => t('Hide the Youtube logo button on the player'),
+  	'#default_value' => $defaults['modestbranding']
   );
   $form['autohide'] = array(
     '#type' => 'radios',
