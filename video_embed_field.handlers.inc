@@ -97,6 +97,16 @@ function _video_embed_field_get_youtube_id($url){
  */
 function video_embed_field_handle_youtube($url, $settings) {
   $output = array();
+
+  //Grab the minutes and seconds, and just convert it down to seconds
+  preg_match('/#t=((?P<min>\d+)m)?((?P<sec>\d+)s)?/', $url, $matches);
+  //Give it some default data in case there is no #t=...
+  $matches += array(
+  	"min" => 0,
+  	"sec" => 0,
+  );
+  $time = ($matches["min"] * 60) + $matches["sec"];
+  $time = "&start=" . $time;
   
   $id = _video_embed_field_get_youtube_id($url);
   if (!$id) {
@@ -108,7 +118,7 @@ function video_embed_field_handle_youtube($url, $settings) {
   $settings['wmode'] = 'opaque';
   $settings_str = _video_embed_code_get_settings_str($settings);
   
-  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://www.youtube.com/embed/' . $id . '?' . $time .  $settings_str . '" frameborder="0" allowfullscreen></iframe>';
   
   return $output;
 }
