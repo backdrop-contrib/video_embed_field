@@ -87,7 +87,6 @@ function video_embed_field_schema(){
       'name' => array('name')
     ),
   );
-  
   return $schema;
 }
 
