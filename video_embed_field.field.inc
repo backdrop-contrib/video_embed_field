@@ -245,9 +245,8 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
   if ($instance['settings']['description_field']) {
     $element['description'] = array(
       '#title' => t('Show description'),
-      '#type' => 'select',
+      '#type' => 'checkbox',
       '#default_value' => $settings['description'],
-      '#options' => array(1 => t('Yes'), 0 => t('No')),
     );
   }
   return $element;
@@ -287,6 +286,9 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
   
   if ($settings['description'] && $instance['settings']['description_field']) {
     $summary[] = t('Show description');
+  }
+  else{
+  	$summary[] = t('Hide description');
   }
   
   return implode('<br />', $summary);
