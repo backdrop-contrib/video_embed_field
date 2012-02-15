@@ -146,7 +146,14 @@ function video_embed_field_field_presave($entity_type, $entity, $field, $instanc
       if (!file_exists($local_path)) {
         $dirname = drupal_dirname($local_path);
         file_prepare_directory($dirname, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
-        @copy($thumb_url, $local_path);
+
+        $response = drupal_http_request($thumb_url);
+        if (!isset($response->error)) {
+           file_save_data($response->data, $local_path, TRUE);
+        }
+        else{
+           @copy($thumb_url, $local_path);
+        }
       }
       
       $items[$delta]['thumbnail_path'] = $local_path;
