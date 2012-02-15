@@ -376,10 +376,8 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
   
   //Get the HTML instead of the array, because we append it to the suffix.
   //This way, the thumbnail link wrapper doesn't make the description a link as well.
-  $description_html = '';
-  foreach($description as $piece){
-  	$description_html .= $piece;
-  }
+  $description_html = drupal_render($description);
+  
   //No need to check to add, as we set it to blank above if it's set to not display.
   //The if/else is so that it doesn't show an error in case there's no suffix.
   if(isset($element[$delta]['#suffix'])){
