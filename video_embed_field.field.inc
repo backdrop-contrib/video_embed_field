@@ -184,7 +184,11 @@ function video_embed_field_field_formatter_info() {
     'video_embed_field_thumbnail' => array(
       'label' => t('Thumbnail Preview'),
       'field types' => array('video_embed_field'),
-      'settings' => array('image_style' => 'none', 'description' => 1),
+      'settings' => array(
+      	'image_style' => 'none',
+      	'description' => 1,
+      	'image_link' => 'none',
+      ),
     ),
   );
   if( module_exists('colorbox')  ) {
@@ -224,6 +228,20 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
     ); 
   }
   
+  if($display['type'] == 'video_embed_field_thumbnail'){
+  	$link_types = array(
+    	'node' => t('Node'),
+    	'source' => t('Video Source'),
+  	);
+  	$element['image_link'] = array(
+	    '#title' => t('Link thumbnail to'),
+	    '#type' => 'select',
+	    '#default_value' => $settings['image_link'],
+	    '#empty_option' => t('Nothing'),
+	    '#options' => $link_types,
+  	);
+  }
+  
   if ($instance['settings']['description_field']) {
     $element['description'] = array(
       '#title' => t('Show description'),
@@ -258,6 +276,12 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
     } //No Image style (original image)  
     else {
       $summary[] = t('Original Image.');
+    }
+    if($settings['image_link'] != null){
+    	$summary[] = t('Image link: ' . $settings['image_link']);
+    }
+    else{
+    	$summary[] = t('Image link: none');
     }
   }
   
@@ -294,11 +318,9 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
           '#url' => $item['video_url'],
           '#style' => $display['settings']['video_style'],
         ),
-        $description,
       );
     }
     else if ($display['type'] == 'video_embed_field_thumbnail') {
-
       if (isset($item['thumbnail_path'])) {
         if($display['settings']['image_style'] == 'none'){
           $element[$delta] = array(
@@ -306,7 +328,6 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
               '#theme' => 'image',
               '#path' => $item['thumbnail_path'],
             ),
-            $description,
           );
         }
         else {
@@ -316,13 +337,21 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
               '#path' => $item['thumbnail_path'],
               '#style_name' => $display['settings']['image_style'],
             ),
-            $description,
           );
         }
+        if($display['settings']['image_link'] == 'source'){
+			  	$element[$delta]['#prefix'] = '<a href="' . $item['video_url'] . '">';
+			  	$element[$delta]['#suffix'] = '</a>';
+			  }
+			  else if($display['settings']['image_link'] == 'node'){
+			  	$nid = $entity->nid;
+			  	$base_path = $GLOBALS['base_path'];
+			  	$element[$delta]['#prefix'] = '<a href="' . $base_path . 'node/'. $nid . '">';
+			  	$element[$delta]['#suffix'] = '</a>';
+			  }
       } //incase no thumbnail was downloaded / provider doesn't support thumbnails
       else {
         $element[$delta] = array(
-          $description,
         );    
       }
     }
@@ -336,15 +365,28 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
             '#video_url' => $item['video_url'],
             '#video_style' => $display['settings']['video_style'],
           ),
-          $description,
         );      
-      } //incase no thumbnail was downloaded / provider doesn't support thumbnails
+      }//incase no thumbnail was downloaded / provider doesn't support thumbnails
       else {
         $element[$delta] = array(
-          $description,
         );    
       }
     } 
+  }
+  
+  //Get the HTML instead of the array, because we append it to the suffix.
+  //This way, the thumbnail link wrapper doesn't make the description a link as well.
+  $description_html = '';
+  foreach($description as $piece){
+  	$description_html .= $piece;
+  }
+  //No need to check to add, as we set it to blank above if it's set to not display.
+  //The if/else is so that it doesn't show an error in case there's no suffix.
+  if(isset($element[$delta]['#suffix'])){
+  	$element[$delta]['#suffix'] .= $description_html;
+  }
+  else{
+  	$element[$delta]['#suffix'] = $description_html;
   }
 
   return $element;
