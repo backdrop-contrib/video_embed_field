@@ -95,7 +95,6 @@ function _video_embed_field_get_youtube_id($url){
       $id = substr($url, $pos);
     }
   }
-  drupal_set_message('<pre>'.print_r($id, true).'</pre>');
   return $id;
 }
 
