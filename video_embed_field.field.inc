@@ -283,11 +283,11 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
     	$summary[] = t('Image link: none');
     }
   }
-  
+
   if ($settings['description'] && $instance['settings']['description_field']) {
     $summary[] = t('Show description');
   }
-  else{
+  else if ($instance['settings']['description_field']) {
   	$summary[] = t('Hide description');
   }
   
@@ -342,14 +342,16 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
           );
         }
         if($display['settings']['image_link'] == 'source'){
-			  	$element[$delta]['#prefix'] = '<a href="' . $item['video_url'] . '">';
-			  	$element[$delta]['#suffix'] = '</a>';
+          $link = explode('|||', l('|||', $item['video_url']));
+			  	$element[$delta]['#prefix'] = $link[0];
+			  	$element[$delta]['#suffix'] = $link[1];
 			  }
 			  else if($display['settings']['image_link'] == 'node'){
 			  	$nid = $entity->nid;
 			  	$base_path = $GLOBALS['base_path'];
-			  	$element[$delta]['#prefix'] = '<a href="' . $base_path . 'node/'. $nid . '">';
-			  	$element[$delta]['#suffix'] = '</a>';
+          $link = explode('|||', l('|||', 'node/'. $nid));
+			  	$element[$delta]['#prefix'] = $link[0];
+			  	$element[$delta]['#suffix'] = $link[1];
 			  }
       } //incase no thumbnail was downloaded / provider doesn't support thumbnails
       else {
