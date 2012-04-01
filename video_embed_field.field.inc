@@ -185,9 +185,9 @@ function video_embed_field_field_formatter_info() {
       'label' => t('Thumbnail Preview'),
       'field types' => array('video_embed_field'),
       'settings' => array(
-      	'image_style' => 'none',
-      	'description' => 1,
-      	'image_link' => 'none',
+        'image_style' => 'none',
+        'description' => 1,
+        'image_link' => 'none',
       ),
     ),
   );
@@ -229,17 +229,17 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
   }
   
   if($display['type'] == 'video_embed_field_thumbnail'){
-  	$link_types = array(
-    	'node' => t('Node'),
-    	'source' => t('Video Source'),
-  	);
-  	$element['image_link'] = array(
-	    '#title' => t('Link thumbnail to'),
-	    '#type' => 'select',
-	    '#default_value' => $settings['image_link'],
-	    '#empty_option' => t('Nothing'),
-	    '#options' => $link_types,
-  	);
+    $link_types = array(
+      'node' => t('Node'),
+      'source' => t('Video Source'),
+    );
+    $element['image_link'] = array(
+      '#title' => t('Link thumbnail to'),
+      '#type' => 'select',
+      '#default_value' => $settings['image_link'],
+      '#empty_option' => t('Nothing'),
+      '#options' => $link_types,
+    );
   }
   
   if ($instance['settings']['description_field']) {
@@ -277,10 +277,10 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
       $summary[] = t('Original Image.');
     }
     if(isset($settings['image_link'])){
-    	$summary[] = t('Image link: ' . $settings['image_link']);
+      $summary[] = t('Image link: ' . $settings['image_link']);
     }
     else{
-    	$summary[] = t('Image link: none');
+      $summary[] = t('Image link: none');
     }
   }
 
@@ -288,7 +288,7 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
     $summary[] = t('Show description');
   }
   else if ($instance['settings']['description_field']) {
-  	$summary[] = t('Hide description');
+    $summary[] = t('Hide description');
   }
   
   return implode('<br />', $summary);
@@ -343,15 +343,15 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
         }
         if($display['settings']['image_link'] == 'source'){
           $link = explode('|||', l('|||', $item['video_url']));
-			  	$element[$delta]['#prefix'] = $link[0];
-			  	$element[$delta]['#suffix'] = $link[1];
-			  }
-			  else if($display['settings']['image_link'] == 'node'){
-			  	$nid = $entity->nid;
+          $element[$delta]['#prefix'] = $link[0];
+          $element[$delta]['#suffix'] = $link[1];
+        }
+        else if($display['settings']['image_link'] == 'node'){
+          $nid = $entity->nid;
           $link = explode('|||', l('|||', 'node/'. $nid));
-			  	$element[$delta]['#prefix'] = $link[0];
-			  	$element[$delta]['#suffix'] = $link[1];
-			  }
+          $element[$delta]['#prefix'] = $link[0];
+          $element[$delta]['#suffix'] = $link[1];
+        }
       } //incase no thumbnail was downloaded / provider doesn't support thumbnails
       else {
         $element[$delta] = array(
