@@ -263,15 +263,15 @@ function video_embed_field_handle_vimeo_thumbnail($url){
   $info = array(
     'id' => $id,
   );
-  
-  $return = file_get_contents('http://vimeo.com/api/v2/video/'.$id.'.php');
-  $return = unserialize($return);
-  $video = current($return);
-  
-  $image_url = $video['thumbnail_large'];
 
-  $info['url'] = $image_url;
-  
+  $return = drupal_http_request('http://vimeo.com/api/v2/video/'.$id.'.php');
+  if (!isset($return->error)) {
+    $return = unserialize($return->data);
+    $video = current($return);
+    
+    $image_url = $video['thumbnail_large'];
+    $info['url'] = $image_url;
+  }
   return $info;
 }
 
