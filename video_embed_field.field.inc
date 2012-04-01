@@ -348,7 +348,6 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
 			  }
 			  else if($display['settings']['image_link'] == 'node'){
 			  	$nid = $entity->nid;
-			  	$base_path = $GLOBALS['base_path'];
           $link = explode('|||', l('|||', 'node/'. $nid));
 			  	$element[$delta]['#prefix'] = $link[0];
 			  	$element[$delta]['#suffix'] = $link[1];
