@@ -45,7 +45,11 @@ function video_embed_field_video_embed_handler_info() {
       'width' => 640,
       'height' => 360,
       'color' => '00adef',
+      'portrait' => 1,
+      'title' => 1,
+      'byline' => 1,
       'autoplay' => 0,
+      'loop' => 0,
     ),
   );
   
@@ -304,13 +308,42 @@ function video_embed_field_handler_vimeo_form($defaults) {
     '#description' => t('The color to use on the vimeo player.'),
     '#default_value' => $defaults['color'],
   );
+  $form['portrait'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Overlay Author Thumbnail'),
+    '#description' => t('Overlay the author\'s thumbnail before the video is played.'),
+    '#default_value' => $defaults['portrait'],
+  );
+  $form['title'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Overlay Video\'s Title'),
+    '#description' => t('Overlay the video\'s title before the video is played.'),
+    '#default_value' => $defaults['title'],
+  );
+  $form['byline'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Overlay Video\'s Byline'),
+    '#description' => t('Overlay the video\'s description before the video is played.'),
+    '#default_value' => $defaults['byline'],
+  );
+  $form['overridable'] = array (
+    '#prefix' => '<p class="note"><strong>'.t('Note').': </strong><em>',
+    '#markup' => t('Color, portrait, title and byline can be restricted by Vimeo Plus videos.  
+      Such videos will ignore these settings.'),
+    '#suffix' => '</em></p>',
+  );
   $form['autoplay'] = array(
     '#type' => 'checkbox',
     '#title' => t('Autoplay'),
     '#description' => t('Play the video immediately.'),
     '#default_value' => $defaults['autoplay'],
   );
-  
+  $form['loop'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Loop'),
+    '#description' => t('Loop the video\'s playback'),
+    '#default_value' => $defaults['loop'],
+  );
   return $form;
 }
 
