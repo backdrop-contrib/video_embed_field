@@ -276,7 +276,7 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
     else {
       $summary[] = t('Original Image.');
     }
-    if($settings['image_link'] != null){
+    if(isset($settings['image_link'])){
     	$summary[] = t('Image link: ' . $settings['image_link']);
     }
     else{
