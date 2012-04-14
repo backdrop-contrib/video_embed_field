@@ -129,7 +129,7 @@ function video_embed_field_handle_youtube($url, $settings) {
   $settings['wmode'] = 'opaque';
   $settings_str = _video_embed_code_get_settings_str($settings);
   
-  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
 
   return $output;
 }
@@ -244,7 +244,7 @@ function video_embed_field_handle_vimeo($url, $settings) {
   $settings['portrait'] = 0;
   $settings_str = _video_embed_code_get_settings_str($settings);
   
-  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://player.vimeo.com/video/' . $id . '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>';
+  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="//player.vimeo.com/video/' . $id . '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>';
   
   return $output;
 }
