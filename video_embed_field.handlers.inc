@@ -197,7 +197,6 @@ function _video_embed_field_clean_up_youtube_data($data) {
 
     if($key === 'category') {
       $terms = array();
-      dpm($data[$key]);
       foreach ($data[$key] as $value) {
         if(isset($value['scheme']) && $value['scheme'] == 'http://schemas.google.com/g/2005#kind') {
           continue;
