@@ -130,18 +130,18 @@ function video_embed_field_field_validate($entity_type, $entity, $field, $instan
 }
 
 /**
- *  Implementation of hook_field_prepare_view().
+ * Implementation of hook_field_prepare_view().
  *
- *  Download and save the thumbnail if it hasn't already been stored
+ * Download and save the thumbnail if it hasn't already been stored.
+ * Get video data.
  */
 function video_embed_field_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
   foreach($items as $delta => $item){
-  
-    $info = video_embed_field_thumbnail_url($item['video_url']);
-    
+
+    // Try to load thumbnail URL
+    $info = video_embed_field_thumbnail_url($item['video_url']);  
     if (isset($info['url']) && $info['url']) {
       $thumb_url = $info['url'];
-
       $local_path = 'public://video_embed_field_thumbnails/' . $info['handler'] . '/' . $info['id'] . '.jpg';
       if (!file_exists($local_path)) {
         $dirname = drupal_dirname($local_path);
@@ -155,15 +155,25 @@ function video_embed_field_field_presave($entity_type, $entity, $field, $instanc
            @copy($thumb_url, $local_path);
         }
       }
-      
+
       $items[$delta]['thumbnail_path'] = $local_path;
     } //couldn't get the thumbnail for whatever reason
     else {
       $items[$delta]['thumbnail_path'] = ''; 
     }
-  
+
+    // Try to load video data
+    $data = video_embed_field_get_video_data($item['video_url']);
+    if (is_array($data) && !empty($data)) {
+      $items[$delta]['video_data'] = serialize($data);
+    }
+    else {
+      $items[$delta]['video_data'] = NULL;
+    }
+
   }
 }
+
 /**
  * Implements of hook_field_is_empty().
  */
@@ -312,6 +322,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     else {
       $description = array();
     }
+
     //Render the field
     if ($display['type'] == 'video_embed_field') {
       $element[$delta] = array(
@@ -319,6 +330,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
           '#theme' => 'video_embed_field_embed_code',
           '#url' => $item['video_url'],
           '#style' => $display['settings']['video_style'],
+          '#video_data' => !empty($item['video_data']) ? unserialize($item['video_data']) : array(),
         ),
       );
     }
@@ -367,6 +379,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
             '#image_style' => $display['settings']['image_style'],
             '#video_url' => $item['video_url'],
             '#video_style' => $display['settings']['video_style'],
+            '#video_data' => unserialize($item['video_data']),
           ),
         );      
       }//incase no thumbnail was downloaded / provider doesn't support thumbnails

@@ -11,6 +11,7 @@
  *  'title' : required, the untranslated title of the provider, to show to the admin user
  *  'function' : required, the function used to generate the embed code
  *  'thumbnail_function' : optional, the function used to provide the thumbnail for a video
+ *  'data_function' : optional, the function to return an array of video data.
  *  'form' : required, the function that returns the settings form for your provider
  *  'domains' : required, an array of domains to match against, this is used to know which provider to use
  *  'defaults' : default values for each setting made configurable in your form function
@@ -24,6 +25,7 @@ function hook_video_embed_handler_info() {
     'title' => 'UStream',
     'function' => 'your_module_handle_ustream',
     'thumbnail_function' => 'your_module_handle_ustream_thumbnail',
+    'data_function' => 'your_module_handler_ustream_data',
     'form' => 'your_module_handler_ustream_form',
     'domains' => array(
       'ustream.com',
@@ -87,4 +89,12 @@ function your_module_handler_ustream_form($defaults) {
   );
 
   return $form;
+}
+
+/**
+ *  Return an array of extra data to be stored with the video, this data will be available for theming
+ *  @return an array
+ */
+function your_module_handler_ustream_data($url) {
+  return array();
 }

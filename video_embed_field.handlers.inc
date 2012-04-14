@@ -224,55 +224,85 @@ function video_embed_field_handler_youtube_form($defaults) {
 }
 
 /**
+ * Helper function to get the Vimeo video's ID
+ *
+ * @param string $url
+ *   A Vimeo video URL to get the ID of
+ *
+ * @return integer|false $id
+ *   The video ID, or FALSE if unable to get the video ID
+ */
+function _video_embed_field_get_vimeo_id($url){
+  $pos = strripos($url, '/');
+  if ($pos != FALSE) {
+    $pos += 1;
+    return (int) substr($url, $pos);
+  }
+  return FALSE;
+}
+
+/**
  * Handler for Vimeo videos.
  */
 function video_embed_field_handle_vimeo($url, $settings) {
-  $output = array();
-  // Find the ID of the video they want to play from the url
-  $pos = strripos($url, '/');
-  if ($pos === FALSE) {
-    // We can't decode the URL - just return the URL as a link
-    $output['#markup'] = l($url, $url);
-    return $output;
-  }
-  else {
-    $pos+=1;
-    $id = substr($url, $pos);
+  // Get ID of video from URL
+  $id = _video_embed_field_get_vimeo_id($url);
+  if (!$id) {
+    return array(
+      '#markup' => l($url, $url),
+    );
   }
   
   // Construct the embed code
   $settings['portrait'] = 0;
   $settings_str = _video_embed_code_get_settings_str($settings);
   
-  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="//player.vimeo.com/video/' . $id . '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>';
-  
-  return $output;
+  return array(
+    '#markup' => '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="//player.vimeo.com/video/' . $id .
+                 '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>',
+  );
 }
 
 /**
  *  Get the thumbnail url for youtube videos
  */
 function video_embed_field_handle_vimeo_thumbnail($url){
-  $pos = strripos($url, '/');
-  if($pos === FALSE){
-    $id = FALSE;
-  } else {
-    $pos+=1;
-    $id = substr($url, $pos);
-  }
+    // Get ID of video from URL
+  $id = _video_embed_field_get_vimeo_id($url);
   $info = array(
     'id' => $id,
   );
-
-  $return = drupal_http_request('http://vimeo.com/api/v2/video/'.$id.'.php');
-  if (!isset($return->error)) {
-    $return = unserialize($return->data);
-    $video = current($return);
+  $response = drupal_http_request('http://vimeo.com/api/v2/video/' . $id . '.php');
+  if (!isset($response->error)) {
+    $response = unserialize($response->data);
+    $video = current($response);
     
     $image_url = $video['thumbnail_large'];
     $info['url'] = $image_url;
   }
   return $info;
+}
+
+/**
+ * Get video data for a Vimeo video URL
+ *
+ * @param string $url
+ *   A Vimeo video URL to get data for
+ *
+ * @return array|false $data
+ *   An array of video data, or FALSE if unable to fetch data
+ */
+function video_embed_field_handle_vimeo_data($url) {
+  // Get ID of video from URL
+  $id = _video_embed_field_get_vimeo_id($url);
+  if ($id) {
+    $response = drupal_http_request('http://vimeo.com/api/v2/video/' . $id . '.php');
+    if (!isset($response->error)) {
+      $response = unserialize($response->data);
+      return (array) current($response);
+    }
+  }
+  return FALSE;
 }
 
 /**
