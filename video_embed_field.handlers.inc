@@ -15,6 +15,7 @@ function video_embed_field_video_embed_handler_info() {
     'title' => 'Youtube',
     'function' => 'video_embed_field_handle_youtube',
     'thumbnail_function' => 'video_embed_field_handle_youtube_thumbnail',
+    'data_function' => 'video_embed_field_handle_youtube_data',
     'form' => 'video_embed_field_handler_youtube_form',
     'domains' => array(
       'youtube.com',
@@ -37,6 +38,7 @@ function video_embed_field_video_embed_handler_info() {
     'title' => 'Vimeo',
     'function' => 'video_embed_field_handle_vimeo',
     'thumbnail_function' => 'video_embed_field_handle_vimeo_thumbnail',
+    'data_function' => 'video_embed_field_handle_vimeo_data',
     'form' => 'video_embed_field_handler_vimeo_form',
     'domains' => array(
       'vimeo.com'
@@ -147,6 +149,68 @@ function video_embed_field_handle_youtube_thumbnail($video_url){
     $info['url'] = 'http://img.youtube.com/vi/'.$id.'/0.jpg';
   }
   return $info;
+}
+
+ /**
+ * Get video data for a YouTube video URL
+ *
+ * @param string $url
+ *   A YouTube video URL to get data for
+ *
+ * @return array|false $data
+ *   An array of video data, or FALSE if unable to fetch data
+ */
+function video_embed_field_handle_youtube_data($url) {
+  $data = array();
+
+  // Get YouTube video ID from URL
+  $id = _video_embed_field_get_youtube_id($url);
+
+  if ($id) {
+    $response = drupal_http_request('http://gdata.youtube.com/feeds/api/videos/' . $id . '?v=2&alt=json');
+    if (!isset($response->error)) {
+      $data = json_decode($response->data);
+      $data = (array) $data->entry;
+      return _video_embed_field_clean_up_youtube_data($data);
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ *  Flatten out some unnecessary nesting in the youtube data
+ */
+function _video_embed_field_clean_up_youtube_data($data) {
+  //make things a bit nicer for people trying to use the data
+  foreach ($data as $key => $value) {
+    if (is_object($value)) {
+      $temp = (array)$value;
+      if (isset($temp['$t'])) {
+        $data[$key] = $temp['$t'];
+      } else {
+        $data[$key] = _video_embed_field_clean_up_youtube_data($temp);
+      }
+    } else if (is_array($value)) {
+      $data[$key] = _video_embed_field_clean_up_youtube_data($value);
+    }
+
+    if($key === 'category') {
+      $terms = array();
+      dpm($data[$key]);
+      foreach ($data[$key] as $value) {
+        if(isset($value['scheme']) && $value['scheme'] == 'http://schemas.google.com/g/2005#kind') {
+          continue;
+        }
+
+        if(isset($value['term'])) {
+          $terms[] = $value['term'];
+        }
+      }
+      $data['terms'] = $terms;
+    }
+  }
+  return $data;
 }
 
 /**
