@@ -87,11 +87,15 @@ function video_embed_facebook_handle_video ($url, $settings) {
 
   if($id) {
     //our embed code
-    $embed = '
-     <embed src="http://www.facebook.com/v/!id" type="application/x-shockwave-flash" wmode="opaque"
+    $embed = '<object>
+      <param name="allowfullscreen" value="!fullscreen" />
+      <param name="allowscriptaccess" value="always" />
+      <param name="movie" value="http://www.facebook.com/v/!id" />
+      <param name="wmode" value="opaque" />
+      <embed src="http://www.facebook.com/v/!id" type="application/x-shockwave-flash" wmode="opaque"
         allowscriptaccess="always" allowfullscreen="!fullscreen" width="!widthpx" height="!heightpx">
-     </embed>
-    ';
+      </embed>
+    </object>';
     //use format_string to replace our placeholders with the values from the settings
     $embed = format_string($embed, array(
       '!id' => $id,
@@ -101,9 +105,7 @@ function video_embed_facebook_handle_video ($url, $settings) {
     ));
     //we want to return a render array
     $video = array(
-      '#prefix' => '<object>',
       '#markup' => $embed,
-      '#suffix' => '</object>',
     );
     return $video;
   }
