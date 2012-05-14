@@ -337,7 +337,13 @@ function template_preprocess_video_embed_field_embed_code(&$variables) {
   if ($style == FALSE) {
     $style = video_embed_field_video_style_load('normal');
   }
-  $variables['style_settings'] = $style->data[$variables['handler']];
+  if (isset($style->data[$variables['handler']])) {
+    $variables['style_settings'] = $style->data[$variables['handler']];
+  } //safety valve for when we add new handlers and there are styles in the database.
+  else {
+    $variables['style_settings'] = $handler['defaults'];
+  }
+
 
   // Prepare the URL
   if (!stristr($variables['url'], 'http://') && !stristr($variables['url'], 'https://')) {
