@@ -31,6 +31,7 @@ function video_embed_field_video_embed_handler_info() {
       'showinfo' => 1,
       'modestbranding' => 0,
       'theme' => 'dark',
+      'iv_load_policy' => 1,
     ),
   );
   
@@ -271,13 +272,23 @@ function video_embed_field_handler_youtube_form($defaults) {
   	'#description' => t('Hide the Youtube logo button on the player'),
   	'#default_value' => $defaults['modestbranding']
   );
+  $form['iv_load_policy'] = array(
+    '#type' => 'radios',
+    '#options' => array(
+      1 => t('Show video annotations.'),
+      3 => t('Hide video annotations.'),
+    ),
+    '#title' => t('Display annotations'),
+    '#description' => t('Controls the display of annotations over the video content. Only works when using the flash player.'),
+    '#default_value' => $defaults['iv_load_policy'],
+  );
   $form['autohide'] = array(
     '#type' => 'radios',
     '#options' => array(
       0 => t('The video progress bar and player controls will be visible throughout the video.'),
       1 => t('Automatically slide the video progress bar and the player controls out of view a couple of seconds after the video starts playing. They will only reappear if the user moves her mouse over the video player or presses a keyboard key.'),
       2 => t('The video progress bar will fade out but the player controls (play button, volume control, etc.) remain visible.'),
-    ), 
+    ),
     '#title' => t('Autohide progress bar and the player controls'),
     '#description' => t('Controls the autohide behavior of the youtube player controls.'),
     '#default_value' => $defaults['autohide'],
