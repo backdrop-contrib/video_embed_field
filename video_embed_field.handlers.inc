@@ -72,25 +72,56 @@ function _video_embed_field_get_youtube_id($url){
     $url = substr($url, 8);
   }
   
-  $pos = strripos($url, 'v=');
-  if ($pos!== FALSE) { 
-    $pos += 2;
-    $pos2 = stripos($url, '&', $pos);
-    $pos_hash = stripos($url, '#', $pos);
-
-    $pos2 = _video_embed_get_min($pos2, $pos_hash);
-  }
-  else { 
-    $pos = strripos($url, '/');
-    if ($pos !== FALSE) { 
-      $pos++; 
-      $pos2 = stripos($url, '?', $pos);
-      $pos_hash = stripos($url, '#', $pos);
-      
-      $pos2 = _video_embed_get_min($pos2, $pos_hash);
+  if(stristr($url, 'playlist')){
+    //Playlists need the appended ampersand to take the options properly.
+    $url = $url . '&';
+    $pos = strripos($url, '?list=');
+    if($pos!==FALSE){
+      $pos2 = stripos($url, '&');
+      $pos2++;
+    }
+    else{
+      return FALSE;
     }
   }
+  //Alternate playlist link
+  else if(stristr($url, 'view_play_list')){
+    $url = $url . '&';
+    //All playlist ID's are prepended with PL. view_play_list links allow you to not have that, though.
+    if(!stristr($url, '?p=PL')){
+      $url = substr_replace($url, 'PL', strpos($url, '?p=') + 3, 0);
+    }
+    //Replace the links format with the embed format
+    $url = str_ireplace('play_list?p=', 'videoseries?list=', $url);
+    $pos = strripos($url, 'videoseries?list=');
+    if($pos !== FALSE){
+      $pos2 = stripos($url, '&');
+      $pos2++;
+    }
+    else{
+      return FALSE;
+    }
+  }
+  else{
+    $pos = strripos($url, 'v=');
+    if ($pos!== FALSE) { 
+      $pos += 2;
+      $pos2 = stripos($url, '&', $pos);
+      $pos_hash = stripos($url, '#', $pos);
   
+      $pos2 = _video_embed_get_min($pos2, $pos_hash);
+    }
+    else { 
+      $pos = strripos($url, '/');
+      if ($pos !== FALSE) { 
+        $pos++; 
+        $pos2 = stripos($url, '?', $pos);
+        $pos_hash = stripos($url, '#', $pos);
+        
+        $pos2 = _video_embed_get_min($pos2, $pos_hash);
+      }
+    }
+  }
   if ($pos === FALSE) {
     return FALSE;
   }
@@ -145,7 +176,26 @@ function video_embed_field_handle_youtube_thumbnail($video_url){
   
   $id = _video_embed_field_get_youtube_id($video_url);
   
-  if ($id) {
+  //Playlist
+  if(stristr($id, '?list=')){
+    //Strip out all but the ID, including the PL behind the ID.
+    $start = strpos($id, '?list=PL') + 8;
+    $length = strpos($id, '&') - $start;
+    $id = substr($id, $start, $length);
+    $info['id'] = $id;
+    //Playlist info is stored in XML. The thumbnail is in there.
+    $xml = drupal_http_request('http://gdata.youtube.com/feeds/api/playlists/' . $id);
+    if(!isset($xml->error)){
+      $xml = new SimpleXMLElement($xml->data);
+      $media = $xml->children('http://search.yahoo.com/mrss/');
+      if($media->group->thumbnail && $media->group->thumbnail[0]->attributes()){
+        $attrs = $media->group->thumbnail[0]->attributes();
+        $info['url'] = (string)$attrs['url'];
+      }
+    }
+  }
+  //Regular video
+  else if($id) {
     $info['id'] = $id;
     $info['url'] = 'http://img.youtube.com/vi/'.$id.'/0.jpg';
   }
