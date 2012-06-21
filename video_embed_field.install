@@ -41,7 +41,7 @@ function video_embed_field_field_schema($field){
       $indexes = array();
     break;
   }
-  
+
   return array(
     'columns' => $columns,
     'indexes' => $indexes

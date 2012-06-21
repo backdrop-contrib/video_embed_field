@@ -3,14 +3,14 @@
  *  Provide some handlers for video embed field
  *  Other modules can implement the hook_video_embed_handler_info to provide more handlers
  */
- 
+
 
 /**
  *  Implementation of hook_video_embed_handler_info
  */
 function video_embed_field_video_embed_handler_info() {
   $handlers = array();
-  
+
   $handlers['youtube'] = array(
     'title' => 'Youtube',
     'function' => 'video_embed_field_handle_youtube',
@@ -34,7 +34,7 @@ function video_embed_field_video_embed_handler_info() {
       'iv_load_policy' => 1,
     ),
   );
-  
+
   $handlers['vimeo'] = array(
     'title' => 'Vimeo',
     'function' => 'video_embed_field_handle_vimeo',
@@ -55,7 +55,7 @@ function video_embed_field_video_embed_handler_info() {
       'loop' => 0,
     ),
   );
-  
+
   return $handlers;
 }
 
@@ -71,7 +71,7 @@ function _video_embed_field_get_youtube_id($url){
   else if (stristr($url, 'https://')) {
     $url = substr($url, 8);
   }
-  
+
   if(stristr($url, 'playlist')){
     //Playlists need the appended ampersand to take the options properly.
     $url = $url . '&';
@@ -104,20 +104,20 @@ function _video_embed_field_get_youtube_id($url){
   }
   else{
     $pos = strripos($url, 'v=');
-    if ($pos!== FALSE) { 
+    if ($pos!== FALSE) {
       $pos += 2;
       $pos2 = stripos($url, '&', $pos);
       $pos_hash = stripos($url, '#', $pos);
-  
+
       $pos2 = _video_embed_get_min($pos2, $pos_hash);
     }
-    else { 
+    else {
       $pos = strripos($url, '/');
-      if ($pos !== FALSE) { 
-        $pos++; 
+      if ($pos !== FALSE) {
+        $pos++;
         $pos2 = stripos($url, '?', $pos);
         $pos_hash = stripos($url, '#', $pos);
-        
+
         $pos2 = _video_embed_get_min($pos2, $pos_hash);
       }
     }
@@ -152,7 +152,7 @@ function video_embed_field_handle_youtube($url, $settings) {
   );
   $time = ($matches["min"] * 60) + $matches["sec"];
   $settings['start'] = $time;
-  
+
   $id = _video_embed_field_get_youtube_id($url);
   if (!$id) {
     // We can't decode the URL - just return the URL as a link
@@ -162,7 +162,7 @@ function video_embed_field_handle_youtube($url, $settings) {
   // Construct the embed code
   $settings['wmode'] = 'opaque';
   $settings_str = _video_embed_code_get_settings_str($settings);
-  
+
   $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
 
   return $output;
@@ -173,9 +173,9 @@ function video_embed_field_handle_youtube($url, $settings) {
  */
 function video_embed_field_handle_youtube_thumbnail($video_url){
   $info = array();
-  
+
   $id = _video_embed_field_get_youtube_id($video_url);
-  
+
   //Playlist
   if(stristr($id, '?list=')){
     //Strip out all but the ID, including the PL behind the ID.
@@ -268,7 +268,7 @@ function _video_embed_field_clean_up_youtube_data($data) {
  */
 function video_embed_field_handler_youtube_form($defaults) {
   $form = array();
-  
+
   $form['width'] = array(
     '#type' => 'textfield',
     '#size' => '5',
@@ -288,7 +288,7 @@ function video_embed_field_handler_youtube_form($defaults) {
     '#options' => array(
       'dark' => t('Dark'),
       'light' => t('Light'),
-    ), 
+    ),
     '#title' => t('Player theme'),
     '#default_value' => $defaults['theme'],
   );
@@ -376,11 +376,11 @@ function video_embed_field_handle_vimeo($url, $settings) {
       '#markup' => l($url, $url),
     );
   }
-  
+
   // Construct the embed code
   $settings['portrait'] = 0;
   $settings_str = _video_embed_code_get_settings_str($settings);
-  
+
   return array(
     '#markup' => '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="//player.vimeo.com/video/' . $id .
                  '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>',
@@ -400,7 +400,7 @@ function video_embed_field_handle_vimeo_thumbnail($url){
   if (!isset($response->error)) {
     $response = unserialize($response->data);
     $video = current($response);
-    
+
     $image_url = $video['thumbnail_large'];
     $info['url'] = $image_url;
   }
@@ -434,7 +434,7 @@ function video_embed_field_handle_vimeo_data($url) {
  */
 function video_embed_field_handler_vimeo_form($defaults) {
   $form = array();
-  
+
   $form['width'] = array(
     '#type' => 'textfield',
     '#size' => '5',
@@ -456,8 +456,8 @@ function video_embed_field_handler_vimeo_form($defaults) {
       'ff9933' => t('Orange'),
       'c9ff23' => t('Lime'),
       'ff0179' => t('Fuschia'),
-      'ffffff' => t('White') 
-    ), 
+      'ffffff' => t('White')
+    ),
     '#title' => t('Player Color'),
     '#description' => t('The color to use on the vimeo player.'),
     '#default_value' => $defaults['color'],
@@ -482,7 +482,7 @@ function video_embed_field_handler_vimeo_form($defaults) {
   );
   $form['overridable'] = array (
     '#prefix' => '<p class="note"><strong>'.t('Note').': </strong><em>',
-    '#markup' => t('Color, portrait, title and byline can be restricted by Vimeo Plus videos.  
+    '#markup' => t('Color, portrait, title and byline can be restricted by Vimeo Plus videos.
       Such videos will ignore these settings.'),
     '#suffix' => '</em></p>',
   );
