@@ -22,8 +22,8 @@ function video_embed_field_video_embed_handler_info() {
       'youtu.be'
     ),
     'defaults' => array(
-      'width' => 640,
-      'height' => 360,
+      'width' => '640px',
+      'height' => '360px',
       'autoplay' => 0,
       'hd' => 1,
       'rel' => 0,
@@ -45,8 +45,8 @@ function video_embed_field_video_embed_handler_info() {
       'vimeo.com'
     ),
     'defaults' => array(
-      'width' => 640,
-      'height' => 360,
+      'width' => '640px',
+      'height' => '360px',
       'color' => '00adef',
       'portrait' => 1,
       'title' => 1,
@@ -273,14 +273,14 @@ function video_embed_field_handler_youtube_form($defaults) {
     '#type' => 'textfield',
     '#size' => '5',
     '#title' => t('Player Width'),
-    '#description' => t('The width of the youtube player, in pixels.  Only enter the number e.g. 560'),
+    '#description' => t('The width of the youtube player.'),
     '#default_value' => $defaults['width'],
   );
   $form['height'] = array(
     '#type' => 'textfield',
     '#size' => '5',
     '#title' => t('Player Height'),
-    '#description' => t('The height of the youtube player, in pixels.  Only enter the number e.g. 349'),
+    '#description' => t('The height of the youtube player.'),
     '#default_value' => $defaults['height'],
   );
   $form['theme'] = array(
@@ -439,14 +439,14 @@ function video_embed_field_handler_vimeo_form($defaults) {
     '#type' => 'textfield',
     '#size' => '5',
     '#title' => t('Player Width'),
-    '#description' => t('The width of the vimeo player, in pixels.  Only enter the number e.g. 560'),
+    '#description' => t('The width of the vimeo player.'),
     '#default_value' => $defaults['width'],
   );
   $form['height'] = array(
     '#type' => 'textfield',
     '#size' => '5',
     '#title' => t('Player Height'),
-    '#description' => t('The height of the vimeo player, in pixels.  Only enter the number e.g. 315'),
+    '#description' => t('The height of the vimeo player.'),
     '#default_value' => $defaults['height'],
   );
   $form['color'] = array(

@@ -54,14 +54,14 @@ function video_embed_facebook_form ($defaults) {
   $form['height'] = array(
     '#type' => 'textfield',
     '#title' => t('Player Width'),
-    '#description' => t('The width of the player in pixels, do not include "px" e.g. 400 not 400px.'),
+    '#description' => t('The width of the player.'),
     '#default_value' => $defaults['height'],
   );
   //element for width
   $form['width'] = array(
     '#type' => 'textfield',
     '#title' => t('Player Width'),
-    '#description' => t('The width of the player in pixels, do not include "px" e.g. 600 not 600px.'),
+    '#description' => t('The width of the player.'),
     '#default_value' => $defaults['width'],
   );
   //allow configuration of fullscreen
@@ -93,7 +93,7 @@ function video_embed_facebook_handle_video ($url, $settings) {
       <param name="movie" value="http://www.facebook.com/v/!id" />
       <param name="wmode" value="opaque" />
       <embed src="http://www.facebook.com/v/!id" type="application/x-shockwave-flash" wmode="opaque"
-        allowscriptaccess="always" allowfullscreen="!fullscreen" width="!widthpx" height="!heightpx">
+        allowscriptaccess="always" allowfullscreen="!fullscreen" width="!width" height="!height">
       </embed>
     </object>';
     //use format_string to replace our placeholders with the values from the settings
