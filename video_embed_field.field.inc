@@ -16,6 +16,7 @@ function video_embed_field_field_info() {
       'settings' => array(),
       'instance_settings' => array(
         'description_field' => 0,
+        'description_length' => 128,
       ),
       'default_widget' => 'video_embed_field_video',
       'default_formatter' => 'video_embed_field',
@@ -36,6 +37,16 @@ function video_embed_field_field_instance_settings_form($field, $instance) {
     '#description' => t('The description field allows users to enter a description about the video.'),
     '#parents' => array('instance', 'settings', 'description_field'),
     '#weight' => 11,
+  );
+  
+  $form['description_length'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Max description length'),
+    '#default_value' => isset($settings['description_length']) ? $settings['description_length'] : 128,
+    '#parents' => array('instance', 'settings', 'description_length'),
+    '#weight' => 12,
+    '#size' => 5,
+    '#maxlength' => 5,
   );
   
   return $form;
@@ -88,6 +99,7 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
       '#title' => t('Description'),
       '#default_value' => isset($items[$delta]['description']) ? $items[$delta]['description'] : '',
       '#description' => t('The description which may be used as a label.'),
+      '#maxlength' => $instance['settings']['description_length'],
     );
   }
 
