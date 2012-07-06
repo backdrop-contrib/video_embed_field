@@ -17,6 +17,8 @@ module_load_include('inc', 'video_embed_field', 'video_embed_field.field');
 module_load_include('inc', 'video_embed_field', 'video_embed_field.admin');
 // Load our default handlers
 module_load_include('inc', 'video_embed_field', 'video_embed_field.handlers');
+// Load feeds mapping hooks
+module_load_include('inc', 'video_embed_field', 'video_embed_field.feeds');
 
 /**
  * Implementation of hook_ctools_plugin_directory().
