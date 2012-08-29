@@ -221,7 +221,7 @@ function video_embed_field_handle_youtube_data($url) {
     $response = drupal_http_request('http://gdata.youtube.com/feeds/api/videos/' . $id . '?v=2&alt=json');
     if (!isset($response->error)) {
       $data = json_decode($response->data);
-      $data = (array) $data->entry;
+      $data = isset($data->entry) ? (array) $data->entry : (array) $data->feed;
       return _video_embed_field_clean_up_youtube_data($data);
     }
   }
