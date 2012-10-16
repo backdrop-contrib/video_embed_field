@@ -142,13 +142,15 @@ function video_embed_field_field_validate($entity_type, $entity, $field, $instan
 }
 
 /**
- * Implementation of hook_field_prepare_view().
+ * Implementation of hook_field_presave().
  *
  * Download and save the thumbnail if it hasn't already been stored.
  * Get video data.
  */
 function video_embed_field_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
   foreach($items as $delta => $item){
+    //Trim whitespace from the video URL.
+    $items[$delta]['video_url'] = trim($item['video_url']);
 
     // Try to load thumbnail URL
     $info = video_embed_field_thumbnail_url($item['video_url']);  
