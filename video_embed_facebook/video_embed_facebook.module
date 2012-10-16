@@ -91,9 +91,9 @@ function video_embed_facebook_handle_video($url, $settings) {
     $embed = '<object>
       <param name="allowfullscreen" value="!fullscreen" />
       <param name="allowscriptaccess" value="always" />
-      <param name="movie" value="http://www.facebook.com/v/!id" />
+      <param name="movie" value="https://www.facebook.com/v/!id" />
       <param name="wmode" value="opaque" />
-      <embed src="http://www.facebook.com/v/!id" type="application/x-shockwave-flash" wmode="opaque"
+      <embed src="https://www.facebook.com/v/!id" type="application/x-shockwave-flash" wmode="opaque"
         allowscriptaccess="always" allowfullscreen="!fullscreen" width="!width" height="!height">
       </embed>
     </object>';
