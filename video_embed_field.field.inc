@@ -204,9 +204,9 @@ function video_embed_field_field_formatter_info() {
       'label' => t('Video Player'),
       'field types' => array('video_embed_field'),
       'settings' => array(
-        'video_style' => 'normal',
-        'description' => 1,
-      ),
+      'video_style' => 'normal',
+      'description' => 1,
+      'description_position' => 'bottom'
     ),
     'video_embed_field_thumbnail' => array(
       'label' => t('Thumbnail Preview'),
@@ -214,6 +214,7 @@ function video_embed_field_field_formatter_info() {
       'settings' => array(
         'image_style' => 'none',
         'description' => 1,
+        'description_position' => 'bottom',
         'image_link' => 'none',
       ),
     ),
@@ -226,6 +227,7 @@ function video_embed_field_field_formatter_info() {
         'video_style' => 'normal',
         'image_style' => 'none',
         'description' => 1,
+        'description_position' => 'bottom',
       ),
     );
   }
@@ -279,10 +281,19 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
       '#type' => 'checkbox',
       '#default_value' => $settings['description'],
     );
+
+    $element['description_position'] = array(
+      '#title' => t('Description Position'),
+      '#type' => 'select',
+      '#options' => array(
+        'top' => t('Top'),
+        'bottom' => t('Bottom')
+      ),
+      '#default_value' => $settings['description_position'],
+    );
   }
   return $element;
 }
-
 /**
  * Implements hook_field_formatter_settings_summary().
  */
@@ -414,13 +425,13 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     //This way, the thumbnail link wrapper doesn't make the description a link as well.
     $description_html = drupal_render($description);
 
-    //No need to check to add, as we set it to blank above if it's set to not display.
-    //The if/else is so that it doesn't show an error in case there's no suffix.
-    if (isset($element[$delta]['#suffix'])) {
-      $element[$delta]['#suffix'] .= $description_html;
+    if ($display['settings']['description_position'] == 'top') {
+      $element[$delta]['#prefix'] = isset($element[$delta]['#prefix']) ? $element[$delta]['#prefix'] : '';
+      $element[$delta]['#prefix'] = $description_html . $element[$delta]['#prefix'];
     }
     else {
-      $element[$delta]['#suffix'] = $description_html;
+      $element[$delta]['#suffix'] = isset($element[$delta]['#suffix']) ? $element[$delta]['#suffix'] : '';
+      $element[$delta]['#suffix'] .= $description_html;
     }
   }
 
