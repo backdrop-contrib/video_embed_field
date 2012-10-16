@@ -480,7 +480,12 @@ function _video_embed_code_get_settings_str($settings = array()) {
   $values = array();
 
   foreach ($settings as $name => $value) {
-    $values[] = $name . '=' . $value;
+    if (empty($value)) {
+      $values[] = $name;
+    }
+    else {
+      $values[] = $name . '=' . $value;
+    }
   }
 
   return implode('&amp;', $values);
