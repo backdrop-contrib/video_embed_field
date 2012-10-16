@@ -204,9 +204,10 @@ function video_embed_field_field_formatter_info() {
       'label' => t('Video Player'),
       'field types' => array('video_embed_field'),
       'settings' => array(
-      'video_style' => 'normal',
-      'description' => 1,
-      'description_position' => 'bottom'
+        'video_style' => 'normal',
+        'description' => 1,
+        'description_position' => 'bottom'
+      ),
     ),
     'video_embed_field_thumbnail' => array(
       'label' => t('Thumbnail Preview'),
@@ -341,10 +342,11 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
  */
 function video_embed_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
+  $settings = $display['settings'];
 
   foreach ($items as $delta => $item) {
     //create the render array for the description
-    if (isset($item['description']) && $item['description'] && $display['settings']['description'] && $instance['settings']['description_field']) {
+    if (isset($item['description']) && $item['description'] && $settings['description'] && $instance['settings']['description_field']) {
       $description = array(
         '#prefix' => '<div class="video-embed-description">',
         '#markup' => $item['description'],
@@ -361,14 +363,14 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
         array(
           '#theme' => 'video_embed_field_embed_code',
           '#url' => $item['video_url'],
-          '#style' => $display['settings']['video_style'],
+          '#style' => $settings['video_style'],
           '#video_data' => !empty($item['video_data']) ? unserialize($item['video_data']) : array(),
         ),
       );
     }
     elseif ($display['type'] == 'video_embed_field_thumbnail') {
       if (isset($item['thumbnail_path'])) {
-        if (empty($display['settings']['image_style']) || $display['settings']['image_style'] == 'none') {
+        if (empty($settings'image_style']) || $settings['image_style'] == 'none') {
           $element[$delta] = array(
             array(
               '#theme' => 'image',
@@ -381,16 +383,16 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
             array(
               '#theme' => 'image_style',
               '#path' => $item['thumbnail_path'],
-              '#style_name' => $display['settings']['image_style'],
+              '#style_name' => $settings['image_style'],
             ),
           );
         }
-        if ($display['settings']['image_link'] == 'source') {
+        if ($settings['image_link'] == 'source') {
           $link = explode('|||', l('|||', $item['video_url']));
           $element[$delta]['#prefix'] = $link[0];
           $element[$delta]['#suffix'] = $link[1];
         }
-        elseif ($display['settings']['image_link'] == 'node') {
+        elseif ($settings['image_link'] == 'node') {
           $nid = $entity->nid;
           $link = explode('|||', l('|||', 'node/' . $nid));
           $element[$delta]['#prefix'] = $link[0];
@@ -425,7 +427,8 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     //This way, the thumbnail link wrapper doesn't make the description a link as well.
     $description_html = drupal_render($description);
 
-    if ($display['settings']['description_position'] == 'top') {
+    $pos = isset($settings['description_position']) ? $settings['description_position'] : 'bottom';
+    if ($pos == 'top') {
       $element[$delta]['#prefix'] = isset($element[$delta]['#prefix']) ? $element[$delta]['#prefix'] : '';
       $element[$delta]['#prefix'] = $description_html . $element[$delta]['#prefix'];
     }
