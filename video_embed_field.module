@@ -481,7 +481,7 @@ function _video_embed_code_get_settings_str($settings = array()) {
   $values = array();
 
   foreach ($settings as $name => $value) {
-    if (empty($value)) {
+    if (!isset($value)) {
       $values[] = $name;
     }
     else {
