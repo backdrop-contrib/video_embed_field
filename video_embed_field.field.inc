@@ -156,7 +156,8 @@ function video_embed_field_field_presave($entity_type, $entity, $field, $instanc
     $info = video_embed_field_thumbnail_url($item['video_url']);  
     if (isset($info['url']) && $info['url']) {
       $thumb_url = $info['url'];
-      $local_path = 'public://video_embed_field_thumbnails/' . $info['handler'] . '/' . $info['id'] . '.jpg';
+      $file_system = variable_get('file_default_scheme', 'public');
+      $local_path = $file_system . '://video_embed_field_thumbnails/' . $info['handler'] . '/' . $info['id'] . '.jpg';
 
       $dirname = drupal_dirname($local_path);
       file_prepare_directory($dirname, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
