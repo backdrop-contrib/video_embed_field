@@ -4,5 +4,7 @@ core = 7.x
 package = Media
 configure = admin/config/media/vef_video_styles
 
+files[] = video_embed_field.migrate.inc
+
 dependencies[] = ctools
 dependencies[] = image
