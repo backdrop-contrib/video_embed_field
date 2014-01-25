@@ -53,12 +53,14 @@ function video_embed_field_default_video_embed_styles() {
   $normal->disabled = FALSE; /* Edit this to true to make a default video_embed_style disabled initially */
   $normal->api_version = 1;
   $normal->name = 'normal';
+  $normal->title = 'Normal';
   $normal->data = array();
 
   $teaser = new stdClass;
   $teaser->disabled = FALSE; /* Edit this to true to make a default video_embed_style disabled initially */
   $teaser->api_version = 1;
   $teaser->name = 'teaser';
+  $teaser->title = 'Teaser';
   $teaser->data = array();
 
   //add in our settings for each of the handlers
@@ -92,8 +94,9 @@ function video_embed_field_menu() {
 /**
  * Get an array of all styles and their settings.
  *
- * @return
- *   An array of styles keyed by the video style ID (vsid).
+ * @return array
+ *   An array of styles keyed by the video style name (name).
+ *
  * @see video_embed_field_video_style_load()
  */
 function video_embed_field_video_styles() {
@@ -111,44 +114,25 @@ function video_embed_field_video_styles() {
 }
 
 /**
- * Load a style by style name or ID. May be used as a loader for menu items.
+ * Load a style by style name. May be used as a loader for menu items.
  *
- * Note that you may also use ctools_export_load_object with the key being vef_video_styles
+ * Note that you may also use ctools_export_load_object with the key being
+ * vef_video_styles
  *
  * @param $name
  *   The name of the style.
- * @param $isid
- *   Optional. The numeric id of a style if the name is not known.
+ *
  * @return
  *   An video style array containing the following keys:
- *   - "vsid": The unique image style ID.
- *   - "name": The unique image style name.
+ *   - "name": The unique video style ID.
+ *   - "title": The human readable video style name.
  *   - "data": An array of video settings within this video style.
  *   If the video style name or ID is not valid, an empty array is returned.
  */
-function video_embed_field_video_style_load($name = NULL, $vsid = NULL) {
+function video_embed_field_video_style_load($name) {
   $styles = video_embed_field_video_styles();
 
-  // If retrieving by name.
-  if (isset($name) && isset($styles[$name])) {
-    $style = $styles[$name];
-  } // If retrieving by image style id.
-  elseif (!isset($name) && isset($vsid)) {
-    foreach ($styles as $name => $database_style) {
-      if (isset($database_style['vsid']) && $database_style['vsid'] == $vsid) {
-        $style = $database_style;
-        break;
-      }
-    }
-  }
-
-  //if we found a style return it
-  if (isset($style)) {
-    return $style;
-  }
-
-  // Otherwise the style was not found.
-  return FALSE;
+  return isset($styles[$name]) ? $styles[$name] : FALSE;
 }
 
 /**
@@ -271,7 +255,9 @@ function video_embed_field_video_style_options($include_empty = TRUE) {
   if ($include_empty && !empty($styles)) {
     $options[''] = t('<none>');
   }
-  $options = array_merge($options, drupal_map_assoc(array_keys($styles)));
+  foreach ($styles as $style) {
+    $options[$style->name] = $style->title;
+  }
   if (empty($options)) {
     $options[''] = t('No defined styles');
   }
