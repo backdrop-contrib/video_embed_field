@@ -291,6 +291,11 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
         'bottom' => t('Bottom')
       ),
       '#default_value' => $settings['description_position'],
+      '#states' => array(
+        'visible' => array(
+          ':input[name="fields[' . $field['field_name'] . '][settings_edit_form][settings][description]"]' => array('checked' => TRUE),
+        ),
+      ),
     );
   }
   return $element;
