@@ -264,7 +264,7 @@ function video_embed_field_update_7006() {
  * Updates vef_video_styles table structure.
  */
 function video_embed_field_update_7007() {
-  // Convert the tabls structure
+  // Convert the table structure
   db_add_field('vef_video_styles', 'title', array(
     'type' => 'varchar',
     'length' => 255,
@@ -316,4 +316,32 @@ function video_embed_field_update_7007() {
   }
 
   return t('Database schema updated successfully');
+}
+
+/**
+ * Updates naming of 'node' formatter setting to 'content'.
+ */
+function video_embed_field_update_7008() {
+  $instances = field_info_instances();
+  foreach ($instances as $entity_type) {
+    foreach($entity_type as $bundle) {
+      foreach ($bundle as $instance) {
+        $field_info = field_info_field($instance['field_name']);
+        if ($field_info['type'] == 'video_embed_field') {
+          $update = FALSE;
+          foreach ($instance['display'] as &$display) {
+            if ($display['type'] == 'video_embed_field_thumbnail' && $display['settings']['image_link'] == 'node') {
+              $display['settings']['image_link'] = 'content';
+              $update = TRUE;
+            }
+          }
+          if ($update) {
+            field_update_instance($instance);
+          }
+        }
+      }
+    }
+  }
+
+  return t('Updated \'node\' setting to \'content\'');
 }

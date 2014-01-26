@@ -264,7 +264,7 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
 
   if ($display['type'] == 'video_embed_field_thumbnail') {
     $link_types = array(
-      'node' => t('Node'),
+      'content' => t('Content'),
       'source' => t('Video Source'),
     );
     $element['image_link'] = array(
@@ -344,6 +344,10 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
   $element = array();
   $settings = $display['settings'];
 
+  if ($display['type'] == 'video_embed_field_thumbnail' && $display['settings']['image_link'] == 'content') {
+    $uri = entity_uri($entity_type, $entity);
+  }
+
   foreach ($items as $delta => $item) {
     //create the render array for the description
     if (isset($item['description']) && $item['description'] && $settings['description'] && $instance['settings']['description_field']) {
@@ -370,34 +374,20 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     }
     elseif ($display['type'] == 'video_embed_field_thumbnail') {
       if (isset($item['thumbnail_path'])) {
-        if (empty($settings['image_style']) || $settings['image_style'] == 'none') {
-          $element[$delta] = array(
-            array(
-              '#theme' => 'image',
-              '#path' => $item['thumbnail_path'],
-            ),
+        $item['uri'] = $item['thumbnail_path'];
+        if ($display['settings']['image_link'] == 'source') {
+          $uri = array(
+            'path' => $item['video_url'],
+            'options' => array(),
           );
         }
-        else {
-          $element[$delta] = array(
-            array(
-              '#theme' => 'image_style',
-              '#path' => $item['thumbnail_path'],
-              '#style_name' => $settings['image_style'],
-            ),
-          );
-        }
-        if ($settings['image_link'] == 'source') {
-          $link = explode('|||', l('|||', $item['video_url']));
-          $element[$delta]['#prefix'] = $link[0];
-          $element[$delta]['#suffix'] = $link[1];
-        }
-        elseif ($settings['image_link'] == 'node') {
-          $nid = $entity->nid;
-          $link = explode('|||', l('|||', 'node/' . $nid));
-          $element[$delta]['#prefix'] = $link[0];
-          $element[$delta]['#suffix'] = $link[1];
-        }
+
+        $element[$delta] = array(
+          '#theme' => 'image_formatter',
+          '#item' => $item,
+          '#image_style' => $display['settings']['image_style'],
+          '#path' => isset($uri) ? $uri : '',
+        );
       } //incase no thumbnail was downloaded / provider doesn't support thumbnails
       else {
         $element[$delta] = array(
