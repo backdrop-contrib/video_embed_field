@@ -330,9 +330,15 @@ function video_embed_field_update_7008() {
         if ($field_info['type'] == 'video_embed_field') {
           $update = FALSE;
           foreach ($instance['display'] as &$display) {
-            if ($display['type'] == 'video_embed_field_thumbnail' && $display['settings']['image_link'] == 'node') {
-              $display['settings']['image_link'] = 'content';
-              $update = TRUE;
+            if ($display['type'] == 'video_embed_field_thumbnail') {
+              if ($display['settings']['image_link'] == 'node') {
+                $display['settings']['image_link'] = 'content';
+                $update = TRUE;
+              }
+              if ($display['settings']['image_style'] == 'none') {
+                $display['settings']['image_style'] = '';
+                $update = TRUE;
+              }
             }
           }
           if ($update) {

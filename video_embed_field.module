@@ -272,9 +272,21 @@ function video_embed_field_filter_info() {
     'title' => t('Video Embedding'),
     'description' => t('Replaces [VIDEO::http://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.'),
     'process callback' => 'video_embed_field_filter_process',
+    'tips callback' => '_filter_video_embed_tips',
   );
 
   return $filters;
+}
+
+/**
+ * Implements callback_filter_tips().
+ *
+ * Provides help for the URL filter.
+ *
+ * @see filter_filter_info()
+ */
+function _filter_video_embed_tips($filter, $format, $long = FALSE) {
+  return t('Replaces [VIDEO::http://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.');
 }
 
 /**
@@ -368,44 +380,16 @@ function template_preprocess_video_embed_field_embed_code(&$variables) {
  * @ingroup themeable
  */
 function theme_video_embed_field_colorbox_code($variables) {
-  $style = video_embed_field_video_style_load($variables['video_style']);
+  $path = video_embed_field_get_ajax_url($variables['video_url'], $variables['video_style']);
 
-  // If there was an issue load in the default style
-  if ($style == FALSE) {
-    $style = video_embed_field_video_style_load('normal');
-  }
+  $image = array(
+    '#theme' => 'image_formatter',
+    '#item' => array('uri' => $variables['image_url']),
+    '#image_style' => $variables['image_style'],
+    '#path' => $path,
+  );
 
-  $handler = video_embed_get_handler($variables['video_url']);
-
-  $data = $style->data[$handler['name']];
-
-  //Create a unique ID for colorbox inline
-  $id = uniqid('video_embed_field-' . rand());
-
-  if ($variables['image_style'] == 'none') {
-    $image = array(
-      array(
-        '#theme' => 'image',
-        '#path' => $variables['image_url'],
-      ),
-    );
-  }
-  else {
-    $image = array(
-      '#theme' => 'image_style',
-      '#path' => $variables['image_url'],
-      '#style_name' => $variables['image_style'],
-    );
-  }
-
-  $image = drupal_render($image);
-
-  // Write values for later AJAX load
-  $hash = _video_embed_field_store_video($variables['video_url'], $variables['video_style']);
-
-  $output = l($image, base_path() . '?q=vef/load/' . $hash . '&width=' . ($data['width']) . '&height=' . ($data['height'] + 3), array('html' => TRUE, 'external' => TRUE, 'attributes' => array('class' => array('colorbox-load'))));
-
-  return $output;
+  return drupal_render($image);
 }
 
 /**
@@ -429,7 +413,7 @@ function video_embed_field_thumbnail_url($url) {
  * @param string $url
  *   A video URL of the data array you want returned
  *
- * @return array|false $data
+ * @return array|false
  *   An array of video data, or FALSE on error
  */
 function video_embed_field_get_video_data($url) {
@@ -440,6 +424,48 @@ function video_embed_field_get_video_data($url) {
     return $data;
   }
   return FALSE;
+}
+
+/**
+ * Generates the AJAX path array from the video URL and the video_style.
+ *
+ * @param string $video_url
+ *   The URL to the video.
+ * @param string $video_style
+ *   The video style to render the video.
+ *
+ * @return array
+ *   The AJAX path array
+ */
+function video_embed_field_get_ajax_url($video_url, $video_style) {
+  $style = video_embed_field_video_style_load($video_style);
+
+  // If there was an issue load in the default style
+  if ($style == FALSE) {
+    $style = video_embed_field_video_style_load('normal');
+  }
+
+  $handler = video_embed_get_handler($video_url);
+
+  $data = $style->data[$handler['name']];
+
+  // Write values for later AJAX load
+  $hash = _video_embed_field_store_video($video_url, $video_style);
+
+  return array(
+    'path' => 'vef/load/' . $hash,
+    'options' => array(
+      'html' => TRUE,
+      'absolute' => TRUE,
+      'attributes' => array(
+        'class' => array('colorbox-load')
+      ),
+      'query' => array(
+        'width' => $data['width'],
+        'height' => $data['height'] + 5
+      )
+    ),
+  );
 }
 
 /**

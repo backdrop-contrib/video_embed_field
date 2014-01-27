@@ -235,7 +235,7 @@ function video_embed_field_field_formatter_info() {
       'label' => t('Thumbnail Preview'),
       'field types' => array('video_embed_field'),
       'settings' => array(
-        'image_style' => 'none',
+        'image_style' => '',
         'description' => 1,
         'description_position' => 'bottom',
         'image_link' => 'none',
@@ -248,7 +248,7 @@ function video_embed_field_field_formatter_info() {
       'field types' => array('video_embed_field'),
       'settings' => array(
         'video_style' => 'normal',
-        'image_style' => 'none',
+        'image_style' => '',
         'description' => 1,
         'description_position' => 'bottom',
       ),
@@ -381,7 +381,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
   $settings = $display['settings'];
 
   if ($display['type'] == 'video_embed_field_thumbnail' && $display['settings']['image_link'] == 'content') {
-    $uri = entity_uri($entity_type, $entity);
+    $path = entity_uri($entity_type, $entity);
   }
 
   foreach ($items as $delta => $item) {
@@ -417,9 +417,8 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     }
     elseif ($display['type'] == 'video_embed_field_thumbnail') {
       if (isset($item['thumbnail_path'])) {
-        $item['uri'] = $item['thumbnail_path'];
         if ($display['settings']['image_link'] == 'source') {
-          $uri = array(
+          $path = array(
             'path' => $item['video_url'],
             'options' => array(),
           );
@@ -427,9 +426,9 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
 
         $element[$delta] = array(
           '#theme' => 'image_formatter',
-          '#item' => $item,
+          '#item' => array('uri' => $item['thumbnail_path']),
           '#image_style' => $display['settings']['image_style'],
-          '#path' => isset($uri) ? $uri : '',
+          '#path' => isset($path) ? $path : '',
         );
       } //incase no thumbnail was downloaded / provider doesn't support thumbnails
       else {
@@ -457,27 +456,11 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
       }
     }
     else if ($display['type'] == 'video_embed_field_url_colorbox') {
-      $style = video_embed_field_video_style_load($display['settings']['video_style']);
-
-      // If there was an issue load in the default style.
-      if ($style == FALSE) {
-        $style = video_embed_field_video_style_load('normal');
-      }
-
-      $handler = video_embed_get_handler($item['video_url']);
-      $data = $style->data[$handler['name']];
-
-      // Write values for later AJAX load.
-      $hash = _video_embed_field_store_video($item['video_url'], $display['settings']['video_style']);
-      $query = array(
-        'q' => 'vef/load/' . $hash,
-        'width' => ($data['width']),
-        'height' => ($data['height']+3),
-      );
+      $path = video_embed_field_get_ajax_url($item['video_url'], $display['settings']['video_style']);
 
       $element[$delta] = array(
         array(
-          '#markup' => url('', array('query' => $query, 'absolute' => TRUE)),
+          '#markup' => url($path['path'], $path['options']),
         ),
       );
     }
