@@ -20,8 +20,25 @@ function video_embed_field_field_info() {
       ),
       'default_widget' => 'video_embed_field_video',
       'default_formatter' => 'video_embed_field',
+      'property_type' => 'video_embed_field',
+      'property_callbacks' => array('video_embed_field_property_info_callback'),
     ),
   );
+}
+
+/**
+ * Property callback for the Entity Metadata framework.
+ */
+function video_embed_field_property_info_callback(&$info, $entity_type, $field, $instance, $field_type) {
+    // Apply the default.
+    entity_metadata_field_default_property_callback($info, $entity_type, $field, $instance, $field_type);
+
+    // Finally add in instance specific property info.
+    $name = $field['field_name'];
+    $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+    $property['type'] = ($field['cardinality'] != 1) ? 'list<video_embed_field>' : 'video_embed_field';
+    $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+    $property['setter callback'] = 'entity_metadata_field_verbatim_set';
 }
 
 /**
