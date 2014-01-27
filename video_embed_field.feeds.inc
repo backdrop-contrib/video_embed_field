@@ -41,10 +41,33 @@ function video_embed_field_set_target($source, $entity, $target, $value) {
     return;
   }
 
-  list($field_name, $sub_field) = explode(':', $target, 2);
-  $field = isset($entity->$field_name) ? $entity->$field_name : array();
-  if (!is_array($value) && !is_object($value)) {
-    $field[LANGUAGE_NONE][0][$sub_field] = $value;
+  if (!is_array($value)) {
+    $value = array($value);
   }
+
+  list($field_name, $sub_field) = explode(':', $target, 2);
+
+  $info = field_info_field($field_name);
+
+  // Iterate over all values.
+  $field = isset($entity->$field_name) ? $entity->$field_name : array(LANGUAGE_NONE => array());
+
+  // Allow for multiple mappings to the same target.
+  $count = call_user_func_array('array_merge_recursive', $field[LANGUAGE_NONE]);
+  $delta = count($count[$sub_field]);
+
+  foreach ($value as $v) {
+
+    if ($info['cardinality'] != FIELD_CARDINALITY_UNLIMITED && $info['cardinality'] <= $delta) {
+      break;
+    }
+
+    if (is_scalar($v)) {
+      $field[LANGUAGE_NONE][$delta][$sub_field] = $v;
+
+      $delta++;
+    }
+  }
+
   $entity->{$field_name} = $field;
 }
