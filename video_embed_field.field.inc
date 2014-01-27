@@ -226,6 +226,11 @@ function video_embed_field_field_formatter_info() {
         'description_position' => 'bottom'
       ),
     ),
+    'video_embed_field_url' => array(
+      'label' => t('URL to Video'),
+      'field types' => array('video_embed_field'),
+      'settings' => array(),
+    ),
     'video_embed_field_thumbnail' => array(
       'label' => t('Thumbnail Preview'),
       'field types' => array('video_embed_field'),
@@ -248,6 +253,13 @@ function video_embed_field_field_formatter_info() {
         'description_position' => 'bottom',
       ),
     );
+    $info['video_embed_field_url_colorbox'] = array(
+      'label' => t('URL to Video w/Colorbox'),
+      'field types' => array('video_embed_field'),
+      'settings' => array(
+        'video_style' => 'normal',
+      ),
+    );
   }
   return $info;
 }
@@ -260,7 +272,7 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
   $settings = $display['settings'];
   $element = array();
 
-  if ($display['type'] == 'video_embed_field' || $display['type'] == 'video_embed_field_thumbnail_colorbox') {
+  if ($display['type'] == 'video_embed_field' || $display['type'] == 'video_embed_field_thumbnail_colorbox' || $display['type'] == 'video_embed_field_url_colorbox') {
     $video_styles = video_embed_field_video_style_options(FALSE);
     $element['video_style'] = array(
       '#title' => t('Video style'),
@@ -293,7 +305,7 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
     );
   }
 
-  if ($instance['settings']['description_field']) {
+  if ($instance['settings']['description_field'] && $display['type'] != 'video_embed_field_url' && $display['type'] != 'video_embed_field_url_colorbox') {
     $element['description'] = array(
       '#title' => t('Show description'),
       '#type' => 'checkbox',
@@ -325,7 +337,7 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
   $settings = $display['settings'];
 
   $summary = array();
-  if ($display['type'] == 'video_embed_field' || $display['type'] == 'video_embed_field_thumbnail_colorbox') {
+  if ($display['type'] == 'video_embed_field' || $display['type'] == 'video_embed_field_thumbnail_colorbox' || $display['type'] == 'video_embed_field_url_colorbox') {
     $video_styles = video_embed_field_video_style_options(FALSE);
     // Styles could be lost because of enabled/disabled modules that defines
     // their styles in code.
@@ -349,11 +361,13 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
     }
   }
 
-  if ($settings['description'] && $instance['settings']['description_field']) {
-    $summary[] = t('Show description');
-  }
-  elseif ($instance['settings']['description_field']) {
-    $summary[] = t('Hide description');
+  if (isset($settings['description'])) {
+    if ($settings['description'] && $instance['settings']['description_field']) {
+      $summary[] = t('Show description');
+    }
+    elseif ($instance['settings']['description_field']) {
+      $summary[] = t('Hide description');
+    }
   }
 
   return implode('<br />', $summary);
@@ -391,6 +405,13 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
           '#url' => $item['video_url'],
           '#style' => $settings['video_style'],
           '#video_data' => !empty($item['video_data']) ? unserialize($item['video_data']) : array(),
+        ),
+      );
+    }
+    else if ($display['type'] == 'video_embed_field_url') {
+      $element[$delta] = array(
+        array(
+          '#markup' => url($item['video_url']),
         ),
       );
     }
@@ -434,6 +455,31 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
         $element[$delta] = array(
         );
       }
+    }
+    else if ($display['type'] == 'video_embed_field_url_colorbox') {
+      $style = video_embed_field_video_style_load($display['settings']['video_style']);
+
+      // If there was an issue load in the default style.
+      if ($style == FALSE) {
+        $style = video_embed_field_video_style_load('normal');
+      }
+
+      $handler = video_embed_get_handler($item['video_url']);
+      $data = $style->data[$handler['name']];
+
+      // Write values for later AJAX load.
+      $hash = _video_embed_field_store_video($item['video_url'], $display['settings']['video_style']);
+      $query = array(
+        'q' => 'vef/load/' . $hash,
+        'width' => ($data['width']),
+        'height' => ($data['height']+3),
+      );
+
+      $element[$delta] = array(
+        array(
+          '#markup' => url('', array('query' => $query, 'absolute' => TRUE)),
+        ),
+      );
     }
     //Get the HTML instead of the array, because we append it to the suffix.
     //This way, the thumbnail link wrapper doesn't make the description a link as well.
