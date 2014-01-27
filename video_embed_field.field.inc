@@ -30,15 +30,46 @@ function video_embed_field_field_info() {
  * Property callback for the Entity Metadata framework.
  */
 function video_embed_field_property_info_callback(&$info, $entity_type, $field, $instance, $field_type) {
-    // Apply the default.
-    entity_metadata_field_default_property_callback($info, $entity_type, $field, $instance, $field_type);
+  // Apply the default.
+  entity_metadata_field_default_property_callback($info, $entity_type, $field, $instance, $field_type);
 
-    // Finally add in instance specific property info.
-    $name = $field['field_name'];
-    $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
-    $property['type'] = ($field['cardinality'] != 1) ? 'list<video_embed_field>' : 'video_embed_field';
-    $property['getter callback'] = 'entity_metadata_field_verbatim_get';
-    $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+  // Finally add in instance specific property info.
+  $name = $field['field_name'];
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+  $property['type'] = ($field['cardinality'] != 1) ? 'list<video_embed_field>' : 'video_embed_field';
+  $property['property info'] = video_embed_field_data_property_info('Video embed');
+  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+}
+
+function video_embed_field_data_property_info($name = NULL) {
+  // Build an array of basic property information for video_embed_field.
+  $properties = array(
+    'video_url' => array(
+      'label' => 'Video URL',
+      'type' => 'uri',
+      'setter callback' => 'entity_property_verbatim_set',
+    ),
+    'thumbnail_url' => array(
+      'label' => 'Thumbnail url',
+      'type' => 'text',
+    ),
+    'description' => array(
+      'label' => 'Description',
+      'type' => 'text',
+      'setter callback' => 'entity_property_verbatim_set',
+    ),
+  );
+
+  // Add the default values for each of the video_embed_field properties.
+  foreach ($properties as $key => &$value) {
+    $value += array(
+      'description' => !empty($name) ? t('!label of field %name', array('!label' => $value['label'], '%name' => $name)) : '',
+      'getter callback' => 'entity_property_verbatim_get',
+    );
+  }
+
+  return $properties;
 }
 
 /**
