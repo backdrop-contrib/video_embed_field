@@ -13,10 +13,17 @@ function video_embed_field_feeds_processor_targets_alter(&$targets, $entity_type
   foreach (field_info_instances($entity_type, $bundle_name) as $name => $instance) {
     $info = field_info_field($name);
     if ($info['type'] == 'video_embed_field') {
-      $targets[$name] = array(
-        'name' => $instance['label'],
+      $targets[$name . ":video_url"] = array(
+        'name' => t('@name: Embed URL', array('@name' => $instance['label'])),
         'callback' => 'video_embed_field_set_target',
-        'description' => t('The @label field of the node.', array('@label' => $instance['label'])),
+        'description' => t('The URL for the @label field of the @entity_type.', array('@entity_type' => $entity_type, '@label' => $instance['label'])),
+        'real_target' => $name,
+      );
+      $targets[$name . ':description'] = array(
+        'name' => t('@name: Embed description', array('@name' => $instance['label'])),
+        'callback' => 'video_embed_field_set_target',
+        'description' => t('The description for the @label field of the @entity_type.', array('@entity_type' => $entity_type, '@label' => $instance['label'])),
+        'real_target' => $name,
       );
     }
   }
@@ -34,10 +41,10 @@ function video_embed_field_set_target($source, $entity, $target, $value) {
     return;
   }
 
-  $field = isset($entity->$target) ? $entity->$target : array();
+  list($field_name, $sub_field) = explode(':', $target, 2);
+  $field = isset($entity->$field_name) ? $entity->$field_name : array();
   if (!is_array($value) && !is_object($value)) {
-    $field['und'][0]['video_url'] = $value;
+    $field[LANGUAGE_NONE][0][$sub_field] = $value;
   }
-  $entity->{$target} = $field;
-
+  $entity->{$field_name} = $field;
 }
