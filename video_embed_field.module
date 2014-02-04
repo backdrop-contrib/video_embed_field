@@ -92,6 +92,47 @@ function video_embed_field_menu() {
 }
 
 /**
+ * Implements hook_permission().
+ */
+function video_embed_field_permission() {
+  return array(
+    'administer video styles' => array(
+      'title' => t('Administer video styles'),
+      'description' => t('Create and modify styles for embedded videos.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function video_embed_field_theme() {
+  return array(
+    // Theme functions in video_embed_field.admin.inc.
+    'video_embed_field_video_style_list' => array(
+      'variables' => array('styles' => NULL),
+    ),
+    'video_embed_field_embed_code' => array(
+      'template' => 'video-embed-field-embed-code',
+      'variables' => array('url' => NULL, 'style' => 'normal', 'video_data' => array()),
+    ),
+    'video_embed_field_colorbox_code' => array(
+      'variables' => array('image_url' => NULL, 'image_style' => 'normal', 'video_url' => NULL, 'video_style' => NULL, 'video_data' => array()),
+    ),
+  );
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function video_embed_field_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'video_embed_field') . '/views',
+  );
+}
+
+/**
  * Get an array of all styles and their settings.
  *
  * @return array
@@ -133,37 +174,6 @@ function video_embed_field_video_style_load($name) {
   $styles = video_embed_field_video_styles();
 
   return isset($styles[$name]) ? $styles[$name] : FALSE;
-}
-
-/**
- * Implements hook_permission().
- */
-function video_embed_field_permission() {
-  return array(
-    'administer video styles' => array(
-      'title' => t('Administer video styles'),
-      'description' => t('Create and modify styles for embedded videos.'),
-    ),
-  );
-}
-
-/**
- * Implements hook_theme().
- */
-function video_embed_field_theme() {
-  return array(
-    // Theme functions in video_embed_field.admin.inc.
-    'video_embed_field_video_style_list' => array(
-      'variables' => array('styles' => NULL),
-    ),
-    'video_embed_field_embed_code' => array(
-      'template' => 'video-embed-field-embed-code',
-      'variables' => array('url' => NULL, 'style' => 'normal', 'video_data' => array()),
-    ),
-    'video_embed_field_colorbox_code' => array(
-      'variables' => array('image_url' => NULL, 'image_style' => 'normal', 'video_url' => NULL, 'video_style' => NULL, 'video_data' => array()),
-    ),
-  );
 }
 
 /**
@@ -296,7 +306,6 @@ function video_embed_field_filter_process($text, $filter, $format) {
   preg_match_all('/ \[VIDEO:: ( [^\[\]]+ )* \] /x', $text, $matches);
 
   $tag_match = (array) array_unique($matches[1]);
-  $handlers = video_embed_get_handlers();
 
   foreach ($tag_match as $tag) {
     $parts = explode('::', $tag);
@@ -579,4 +588,3 @@ function _video_embed_field_load_video($hash) {
 function _video_embed_field_hash($video_url, $video_style) {
   return md5('vef' . $video_url . $video_style);
 }
-
