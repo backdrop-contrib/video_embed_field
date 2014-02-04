@@ -42,6 +42,9 @@ function video_embed_field_property_info_callback(&$info, $entity_type, $field, 
   $property['setter callback'] = 'entity_metadata_field_verbatim_set';
 }
 
+/**
+ * Defines info for the properties of the video_embed_field data structure.
+ */
 function video_embed_field_data_property_info($name = NULL) {
   // Build an array of basic property information for video_embed_field.
   $properties = array(
@@ -50,9 +53,10 @@ function video_embed_field_data_property_info($name = NULL) {
       'type' => 'uri',
       'setter callback' => 'entity_property_verbatim_set',
     ),
-    'thumbnail_url' => array(
-      'label' => 'Thumbnail url',
-      'type' => 'text',
+    'thumbnail_path' => array(
+      'label' => 'Thumbnail path',
+      'type' => 'uri',
+      'getter callback' => 'entity_property_verbatim_get_url'
     ),
     'description' => array(
       'label' => 'Description',
@@ -65,11 +69,18 @@ function video_embed_field_data_property_info($name = NULL) {
   foreach ($properties as $key => &$value) {
     $value += array(
       'description' => !empty($name) ? t('!label of field %name', array('!label' => $value['label'], '%name' => $name)) : '',
-      'getter callback' => 'entity_property_verbatim_get',
     );
   }
 
   return $properties;
+}
+
+/**
+ * Gets the property just as it is set in the data and converts to absolute url.
+ */
+function entity_property_verbatim_get_url($data, array $options, $name, $type, $info) {
+  $property = entity_property_verbatim_get($data, $options, $name, $type, $info);
+  return file_create_url($property);
 }
 
 /**
