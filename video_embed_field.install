@@ -237,33 +237,10 @@ function video_embed_field_update_7005() {
   return t('Data column added. Please clear cache.');
 }
 
-
-/**
- * Update youtube "hd" URL deprecated parameter.
- */
-function video_embed_field_update_7006() {
-  ctools_include('export');
-  $styles = ctools_export_load_object('vef_video_styles');
-  foreach ($styles as $style) {
-    if (isset($style->data['youtube']['hd'])) {
-      if ($style->data['youtube']['hd']) {
-        $style->data['youtube']['vq'] = 'hd720';
-      }
-      else {
-        $style->data['youtube']['vq'] = 'large';
-      }
-      unset($style->data['youtube']['hd']);
-      ctools_export_crud_save('vef_video_styles', $style);
-    }
-  }
-
-  return t('Parameter hd has been converted to vq.');
-}
-
 /**
  * Updates vef_video_styles table structure.
  */
-function video_embed_field_update_7007() {
+function video_embed_field_update_7006() {
   // Convert the table structure
   db_add_field('vef_video_styles', 'title', array(
     'type' => 'varchar',
@@ -316,6 +293,29 @@ function video_embed_field_update_7007() {
   }
 
   return t('Database schema updated successfully');
+}
+
+/**
+ * Update youtube "hd" URL deprecated parameter.
+ */
+function video_embed_field_update_7007() {
+  drupal_get_schema('vef_video_styles', TRUE);
+  ctools_include('export');
+  $styles = ctools_export_load_object('vef_video_styles');
+  foreach ($styles as $style) {
+    if (isset($style->data['youtube']['hd'])) {
+      if ($style->data['youtube']['hd']) {
+        $style->data['youtube']['vq'] = 'hd720';
+      }
+      else {
+        $style->data['youtube']['vq'] = 'large';
+      }
+      unset($style->data['youtube']['hd']);
+      ctools_export_crud_save('vef_video_styles', $style);
+    }
+  }
+
+  return t('Parameter hd has been converted to vq.');
 }
 
 /**
