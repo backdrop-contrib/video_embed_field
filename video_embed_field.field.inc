@@ -149,6 +149,7 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
     ),
     '#default_value' => isset($items[$delta]['video_url']) ? $items[$delta]['video_url'] : '',
     '#required' => $element['#required'],
+    '#maxlength' => 255,
   );
 
   // Add the description field if enabled.
