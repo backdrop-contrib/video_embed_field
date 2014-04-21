@@ -1,8 +1,8 @@
 <?php
+
 /**
  * @file
  * Install, update and uninstall functions for the video_embed_field module.
- *
  */
 
 /**
@@ -242,16 +242,17 @@ function video_embed_field_update_7005() {
  */
 function video_embed_field_update_7006() {
   // Convert the table structure
+  db_drop_primary_key('vef_video_styles');
+  db_drop_field('vef_video_styles', 'vsid');
+  db_add_primary_key('vef_video_styles', array('name'));
+  db_drop_unique_key('vef_video_styles', 'name');
+
   db_add_field('vef_video_styles', 'title', array(
     'type' => 'varchar',
     'length' => 255,
     'not null' => TRUE,
     'default' => ''
   ));
-  db_drop_field('vef_video_styles', 'vsid');
-  db_add_primary_key('vef_video_styles', array('name'));
-  db_drop_unique_key('vef_video_styles', 'name');
-
   // Update title and name values.
   $result = db_select('vef_video_styles', 'vef')
     ->fields('vef', array('name'))
