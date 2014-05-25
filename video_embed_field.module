@@ -244,11 +244,29 @@ function video_embed_field_get_form($defaults) {
         '#type' => 'fieldset',
         '#title' => t($handler['title']),
         '#tree' => TRUE,
+        '#element_validate' => isset($handler['form_validate']) ? array($handler['form_validate']) : array(),
       );
     }
   }
 
   return $form;
+}
+
+/**
+ * Validates the iframe CSS dimensions
+ *
+ * @param $element
+ *   The element to validate.
+ * @param $values
+ *   The values entered by the user.
+ */
+function video_embed_field_validate_dimensions($element) {
+  if (!preg_match('/^(\d*)(px|%)?$/', $element['width']['#value'], $results)) {
+    form_error($element['width'], t('You should use a valid CSS value for width in @plugin plugin', array('@plugin' => $element['#title'])));
+  }
+  if (!preg_match('/^(\d*)(px|%)?$/', $element['height']['#value'], $results)) {
+    form_error($element['height'], t('You should use a valid CSS value for height in @plugin plugin', array('@plugin' => $element['#title'])));
+  }
 }
 
 /**

@@ -15,6 +15,7 @@ function video_embed_brightcove_video_embed_handler_info() {
     'title' => 'Brightcove Video',
     'function' => 'video_embed_brightcove_handle_video',
     'form' => 'video_embed_brightcove_form',
+    'form_validate' => 'video_embed_field_handler_brightcove_form_validate',
     'domains' => array(
       'brightcove.com',
       'link.brightcove.com',
@@ -39,13 +40,6 @@ function video_embed_brightcove_video_embed_handler_info() {
  */
 function video_embed_brightcove_form($defaults) {
   $form = array();
-  // Element for the height of the player.
-  $form['height'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Player Height'),
-    '#description' => t('The height of the player.'),
-    '#default_value' => $defaults['height'],
-  );
   // Element for the width of the player.
   $form['width'] = array(
     '#type' => 'textfield',
@@ -54,7 +48,22 @@ function video_embed_brightcove_form($defaults) {
     '#default_value' => $defaults['width'],
   );
 
+  // Element for the height of the player.
+  $form['height'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Player Height'),
+    '#description' => t('The height of the player.'),
+    '#default_value' => $defaults['height'],
+  );
+
   return $form;
+}
+
+/**
+ * Validates the form elements for the Brightcove configuration form.
+ */
+function video_embed_field_handler_brightcove_form_validate($element, &$form_state, $form) {
+  video_embed_field_validate_dimensions($element);
 }
 
 /**
@@ -75,8 +84,8 @@ function video_embed_brightcove_handle_video($url, $settings) {
     // Embed code.
     $embed = '<object id="myExperience" class="BrightcoveExperience">
       <param name="bgcolor" value="#FFFFFF" />
-      <param name="width" value="!width" />
-      <param name="height" value="!height" />
+      <param name="width" value="@width" />
+      <param name="height" value="@height" />
       <param name="playerID" value="!id" />
       <param name="playerKey" value="!key" />
       <param name="isVid" value="true" />
@@ -88,8 +97,8 @@ function video_embed_brightcove_handle_video($url, $settings) {
     $embed = format_string($embed, array(
       '!id' => $parameters['id'],
       '!key' => $parameters['key'],
-      '!width' => $settings['width'],
-      '!height' => $settings['height'],
+      '@width' => $settings['width'],
+      '@height' => $settings['height'],
       '!videoplayer' => $parameters['player'],
     ));
 

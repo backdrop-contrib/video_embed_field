@@ -26,6 +26,7 @@ function video_embed_facebook_video_embed_handler_info() {
     //'data_function' => 'video_embed_facebook_handle_data',
     //form is the configure form to embed into video_embed styles - this is where all settings should go
     'form' => 'video_embed_facebook_form',
+    'form_validate' => 'video_embed_field_handler_youtube_form_validate',
     //domains is how video embed determines which handler to use, its an array of domains to match
     //urls against.  Don't include the scheme (like http://) or www.
     'domains' => array(
@@ -76,18 +77,29 @@ function video_embed_facebook_form($defaults) {
   return $form;
 }
 
+/**
+ * Validates the form elements for the Facebook configuration form.
+ */
+function video_embed_field_handler_facebook_form_validate($element, &$form_state, $form) {
+  video_embed_field_validate_dimensions($element);
+}
 
 /**
  * This is the video handler (the 'function' key from handler_info)
- * @param $url - the full video url
- * @param $settings - an associative array of this handlers settings, from the settings form
- * @return - the embed code for the video
+ *
+ * @param string $url
+ *   The full video url
+ * @param $settings
+ *   An associative array of this handlers settings, from the settings form
+ *
+ * @return array|string
+ *   The embed code for the video
  */
 function video_embed_facebook_handle_video($url, $settings) {
   $id = _video_embed_facebook_get_video_id($url);
 
   if ($id) {
-    //our embed code
+    // Our embed code.
     $embed = '<object>
       <param name="allowfullscreen" value="!fullscreen" />
       <param name="allowscriptaccess" value="always" />

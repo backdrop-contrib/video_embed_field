@@ -17,6 +17,7 @@ function video_embed_field_video_embed_handler_info() {
     'thumbnail_function' => 'video_embed_field_handle_youtube_thumbnail',
     'data_function' => 'video_embed_field_handle_youtube_data',
     'form' => 'video_embed_field_handler_youtube_form',
+    'form_validate' => 'video_embed_field_handler_youtube_form_validate',
     'domains' => array(
       'youtube.com',
       'youtu.be',
@@ -41,6 +42,7 @@ function video_embed_field_video_embed_handler_info() {
     'thumbnail_function' => 'video_embed_field_handle_vimeo_thumbnail',
     'data_function' => 'video_embed_field_handle_vimeo_data',
     'form' => 'video_embed_field_handler_vimeo_form',
+    'form_validate' => 'video_embed_field_handler_vimeo_form_validate',
     'domains' => array(
       'vimeo.com',
     ),
@@ -163,7 +165,7 @@ function video_embed_field_handle_youtube($url, $settings) {
   $settings['wmode'] = 'opaque';
   $settings_str = _video_embed_code_get_settings_str($settings);
 
-  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+  $output['#markup'] = '<iframe width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
 
   return $output;
 }
@@ -357,6 +359,13 @@ function video_embed_field_handler_youtube_form($defaults) {
 }
 
 /**
+ * Validates the form elements for the Youtube configuration form.
+ */
+function video_embed_field_handler_youtube_form_validate($element, &$form_state, $form) {
+  video_embed_field_validate_dimensions($element);
+}
+
+/**
  * Helper function to get the Vimeo video's ID
  *
  * @param string $url
@@ -391,7 +400,7 @@ function video_embed_field_handle_vimeo($url, $settings) {
   $settings_str = _video_embed_code_get_settings_str($settings);
 
   return array(
-    '#markup' => '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="//player.vimeo.com/video/' . $id .
+    '#markup' => '<iframe width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//player.vimeo.com/video/' . $id .
                  '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>',
   );
 }
@@ -511,7 +520,14 @@ function video_embed_field_handler_vimeo_form($defaults) {
 }
 
 /**
- * Calculate the min index for use in finding the id of a youtube video
+ * Validates the form elements for the Vimeo configuration form.
+ */
+function video_embed_field_handler_vimeo_form_validate($element, &$form_state, $form) {
+  video_embed_field_validate_dimensions($element);
+}
+
+/**
+ * Calculates the min index for use in finding the id of a youtube video
  */
 function _video_embed_get_min($pos1, $pos2) {
   if (!$pos1) {
