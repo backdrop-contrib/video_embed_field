@@ -28,6 +28,7 @@ function video_embed_field_video_embed_handler_info() {
       'autoplay' => 0,
       'vq' => 'large',
       'rel' => 0,
+      'controls' => 1,
       'autohide' => 2,
       'showinfo' => 1,
       'modestbranding' => 0,
@@ -342,6 +343,17 @@ function video_embed_field_handler_youtube_form($defaults) {
     '#title' => t('Display annotations'),
     '#description' => t('Controls the display of annotations over the video content. Only works when using the flash player.'),
     '#default_value' => $defaults['iv_load_policy'],
+  );
+  $form['controls'] = array(
+    '#type' => 'radios',
+    '#options' => array(
+      0 => t('Hide video controls.'),
+      1 => t('Show video controls. Youtube default.'),
+      2 => t('Show video controls with performance improvement for iframe embeds.'),
+    ),
+    '#title' => t('Display Youtube player controls'),
+    '#description' => t('This parameter indicates whether the video player controls will display.'),
+    '#default_value' => $defaults['controls'],
   );
   $form['autohide'] = array(
     '#type' => 'radios',
