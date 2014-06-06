@@ -59,6 +59,7 @@ function video_embed_field_video_embed_handler_info() {
       'byline' => 1,
       'autoplay' => 0,
       'loop' => 0,
+      'froogaloop' => 0,
     ),
   );
 
@@ -455,11 +456,16 @@ function video_embed_field_handle_vimeo($url, $settings) {
   }
 
   // Construct the embed code.
-  $settings['portrait'] = 0;
+  $settings['player_id'] = drupal_html_id('vimeo-' . $id);
+  if (!empty($settings['froogaloop'])) {
+    $settings['api'] = 1;
+  }
+  unset($settings['froogaloop']);
+
   $settings_str = _video_embed_code_get_settings_str($settings);
 
   return array(
-    '#markup' => '<iframe width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//player.vimeo.com/video/' . $id .
+    '#markup' => '<iframe id="' . $settings['player_id'] . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//player.vimeo.com/video/' . $id .
     '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>',
   );
 }
@@ -531,6 +537,7 @@ function video_embed_field_handler_vimeo_form($defaults) {
     '#description' => t('The width of the vimeo player.'),
     '#default_value' => $defaults['width'],
   );
+
   $form['height'] = array(
     '#type' => 'textfield',
     '#size' => '5',
@@ -538,6 +545,7 @@ function video_embed_field_handler_vimeo_form($defaults) {
     '#description' => t('The height of the vimeo player.'),
     '#default_value' => $defaults['height'],
   );
+
   $form['color'] = array(
     '#type' => 'select',
     '#options' => array(
@@ -551,42 +559,56 @@ function video_embed_field_handler_vimeo_form($defaults) {
     '#description' => t('The color to use on the vimeo player.'),
     '#default_value' => $defaults['color'],
   );
+
   $form['portrait'] = array(
     '#type' => 'checkbox',
     '#title' => t('Overlay Author Thumbnail'),
     '#description' => t("Overlay the author's thumbnail before the video is played."),
     '#default_value' => $defaults['portrait'],
   );
+
   $form['title'] = array(
     '#type' => 'checkbox',
     '#title' => t("Overlay Video's Title"),
     '#description' => t("Overlay the video's title before the video is played."),
     '#default_value' => $defaults['title'],
   );
+
   $form['byline'] = array(
     '#type' => 'checkbox',
     '#title' => t("Overlay Video's Byline"),
     '#description' => t("Overlay the video's description before the video is played."),
     '#default_value' => $defaults['byline'],
   );
+
   $form['overridable'] = array(
     '#prefix' => '<p class="note"><strong>' . t('Note') . ': </strong><em>',
     '#markup' => t('Color, portrait, title and byline can be restricted by Vimeo Plus videos.
       Such videos will ignore these settings.'),
     '#suffix' => '</em></p>',
   );
+
   $form['autoplay'] = array(
     '#type' => 'checkbox',
     '#title' => t('Autoplay'),
     '#description' => t('Play the video immediately.'),
     '#default_value' => $defaults['autoplay'],
   );
+
   $form['loop'] = array(
     '#type' => 'checkbox',
     '#title' => t('Loop'),
     '#description' => t("Loop the video's playback"),
     '#default_value' => $defaults['loop'],
   );
+
+  $form['froogaloop'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable froogaloop support'),
+    '#description' => t("Enables Froogallop Vimeo's library support"),
+    '#default_value' => $defaults['loop'],
+  );
+
   return $form;
 }
 

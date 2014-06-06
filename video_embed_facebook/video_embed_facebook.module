@@ -89,7 +89,7 @@ function video_embed_facebook_handle_video($url, $settings) {
 
   if ($id) {
     // Our embed code.
-    $embed='<iframe src="https://www.facebook.com/video/embed?video_id=!id" width="!width" height="!height"></iframe> ';
+    $embed='<iframe src="//www.facebook.com/video/embed?video_id=!id" width="!width" height="!height"></iframe> ';
     // Use format_string to replace our placeholders with the settings values.
     $embed = format_string($embed, array(
       '!id' => $id,
