@@ -26,8 +26,8 @@ function video_embed_field_video_embed_handler_info() {
       'youtu.be',
     ),
     'defaults' => array(
-      'width' => '640px',
-      'height' => '360px',
+      'width' => 640,
+      'height' => 360,
       'autoplay' => 0,
       'vq' => 'large',
       'rel' => 0,
@@ -51,8 +51,8 @@ function video_embed_field_video_embed_handler_info() {
       'vimeo.com',
     ),
     'defaults' => array(
-      'width' => '640px',
-      'height' => '360px',
+      'width' => 640,
+      'height' => 360,
       'color' => '00adef',
       'portrait' => 1,
       'title' => 1,
