@@ -1,7 +1,10 @@
 <?php
+
 /**
+ * @file
  * Provide some handlers for video embed field
- * Other modules can implement the hook_video_embed_handler_info to provide more handlers
+ * Other modules can implement the hook_video_embed_handler_info to provide more
+ * handlers.
  */
 
 
@@ -63,11 +66,16 @@ function video_embed_field_video_embed_handler_info() {
 }
 
 /**
- * Helper function to get the youtube video's id
- * Returns false if it doesn't parse for wahtever reason
+ * Helper function to get the youtube video's id.
+ *
+ * @param string $url
+ *   The video URL.
+ *
+ * @return string|bool
+ *   The video ID, or FALSE in case the ID can't be retrieved from the URL.
  */
 function _video_embed_field_get_youtube_id($url) {
-  // Find the ID of the video they want to play from the url
+  // Find the ID of the video they want to play from the url.
   if (stristr($url, 'http://')) {
     $url = substr($url, 7);
   }
@@ -76,7 +84,7 @@ function _video_embed_field_get_youtube_id($url) {
   }
 
   if (stristr($url, 'playlist')) {
-    //Playlists need the appended ampersand to take the options properly.
+    // Playlists need the appended ampersand to take the options properly.
     $url = $url . '&';
     $pos = strripos($url, '?list=');
     if ($pos !== FALSE) {
@@ -87,14 +95,14 @@ function _video_embed_field_get_youtube_id($url) {
       return FALSE;
     }
   }
-  //Alternate playlist link
+  // Alternate playlist link.
   elseif (stristr($url, 'view_play_list')) {
     $url = $url . '&';
-    //All playlist ID's are prepended with PL. view_play_list links allow you to not have that, though.
+    // All playlist ID's are prepended with PL.
     if (!stristr($url, '?p=PL')) {
       $url = substr_replace($url, 'PL', strpos($url, '?p=') + 3, 0);
     }
-    //Replace the links format with the embed format
+    // Replace the links format with the embed format.
     $url = str_ireplace('play_list?p=', 'videoseries?list=', $url);
     $pos = strripos($url, 'videoseries?list=');
     if ($pos !== FALSE) {
@@ -141,14 +149,22 @@ function _video_embed_field_get_youtube_id($url) {
 
 /**
  * Handler for Youtube videos.
+ *
+ * @param string $url
+ *   The video URL.
+ * @param array $settings
+ *   The settings array.
+ *
+ * @return array
+ *   The video iframe render array.
  */
 function video_embed_field_handle_youtube($url, $settings) {
   $output = array();
 
-  //Grab the minutes and seconds, and just convert it down to seconds
+  // Grab the minutes and seconds, and just convert it down to seconds.
   preg_match('/#t=((?P<min>\d+)m)?((?P<sec>\d+)s)?/', $url, $matches);
 
-  //Give it some default data in case there is no #t=...
+  // Give it some default data in case there is no #t=...
   $matches += array(
     "min" => 0,
     "sec" => 0,
@@ -158,11 +174,11 @@ function video_embed_field_handle_youtube($url, $settings) {
 
   $id = _video_embed_field_get_youtube_id($url);
   if (!$id) {
-    // We can't decode the URL - just return the URL as a link
+    // We can't decode the URL - just return the URL as a link.
     $output['#markup'] = l($url, $url);
     return $output;
   }
-  // Construct the embed code
+  // Construct the embed code.
   $settings['wmode'] = 'opaque';
   $settings_str = _video_embed_code_get_settings_str($settings);
 
@@ -172,21 +188,27 @@ function video_embed_field_handle_youtube($url, $settings) {
 }
 
 /**
- * Get the thumbnail url for youtube videos
+ * Gets the thumbnail url for youtube videos.
+ *
+ * @param string $url
+ *   The video URL.
+ *
+ * @return array
+ *   The video thumbnail information.
  */
-function video_embed_field_handle_youtube_thumbnail($video_url) {
+function video_embed_field_handle_youtube_thumbnail($url) {
   $info = array();
 
-  $id = _video_embed_field_get_youtube_id($video_url);
+  $id = _video_embed_field_get_youtube_id($url);
 
-  //Playlist
+  // Playlist.
   if (stristr($id, '?list=')) {
-    //Strip out all but the ID, including the PL behind the ID.
+    // Strip out all but the ID, including the PL behind the ID.
     $start = strpos($id, '?list=PL') + 8;
     $length = strpos($id, '&') - $start;
     $id = substr($id, $start, $length);
     $info['id'] = $id;
-    //Playlist info is stored in XML. The thumbnail is in there.
+    // Playlist info is stored in XML. The thumbnail is in there.
     $xml = drupal_http_request('http://gdata.youtube.com/feeds/api/playlists/' . $id);
     if (!isset($xml->error)) {
       $xml = new SimpleXMLElement($xml->data);
@@ -197,7 +219,7 @@ function video_embed_field_handle_youtube_thumbnail($video_url) {
       }
     }
   }
-  //Regular video
+  // Regular video.
   elseif ($id) {
     $info['id'] = $id;
     $info['url'] = 'http://img.youtube.com/vi/' . $id . '/0.jpg';
@@ -206,18 +228,16 @@ function video_embed_field_handle_youtube_thumbnail($video_url) {
 }
 
 /**
- * Get video data for a YouTube video URL
+ * Gets video data for a YouTube video URL.
  *
  * @param string $url
  *   A YouTube video URL to get data for
  *
- * @return array|false $data
+ * @return array|bool
  *   An array of video data, or FALSE if unable to fetch data
  */
 function video_embed_field_handle_youtube_data($url) {
-  $data = array();
-
-  // Get YouTube video ID from URL
+  // Get YouTube video ID from URL.
   $id = _video_embed_field_get_youtube_id($url);
 
   if ($id) {
@@ -233,10 +253,16 @@ function video_embed_field_handle_youtube_data($url) {
 }
 
 /**
- * Flatten out some unnecessary nesting in the youtube data
+ * Flattens out some unnecessary nesting in the youtube data.
+ *
+ * @param array $data
+ *   The unflattened data.
+ *
+ * @return array
+ *   The flattened data.
  */
 function _video_embed_field_clean_up_youtube_data($data) {
-  //make things a bit nicer for people trying to use the data
+  // Make things a bit nicer for people trying to use the data.
   foreach ($data as $key => $value) {
     if (is_object($value)) {
       $temp = (array) $value;
@@ -270,6 +296,12 @@ function _video_embed_field_clean_up_youtube_data($data) {
 
 /**
  * Defines the form elements for the Youtube configuration form.
+ *
+ * @param array $defaults
+ *   The form default values.
+ *
+ * @return array
+ *   The provider settings form array.
  */
 function video_embed_field_handler_youtube_form($defaults) {
   $form = array();
@@ -372,19 +404,26 @@ function video_embed_field_handler_youtube_form($defaults) {
 
 /**
  * Validates the form elements for the Youtube configuration form.
+ *
+ * @param array $element
+ *   The form element to validate.
+ * @param array $form_state
+ *   The form to validate state.
+ * @param array $form
+ *   The form to validate structure.
  */
 function video_embed_field_handler_youtube_form_validate($element, &$form_state, $form) {
   video_embed_field_validate_dimensions($element);
 }
 
 /**
- * Helper function to get the Vimeo video's ID
+ * Helper function to get the Vimeo video's ID.
  *
  * @param string $url
- *   A Vimeo video URL to get the ID of
+ *   A Vimeo video URL to get the ID of.
  *
- * @return integer|false $id
- *   The video ID, or FALSE if unable to get the video ID
+ * @return integer|false
+ *   The video ID, or FALSE if unable to get the video ID.
  */
 function _video_embed_field_get_vimeo_id($url) {
   $pos = strripos($url, '/');
@@ -397,9 +436,17 @@ function _video_embed_field_get_vimeo_id($url) {
 
 /**
  * Handler for Vimeo videos.
+ *
+ * @param string $url
+ *   The video URL.
+ * @param array $settings
+ *   The settings array.
+ *
+ * @return string
+ *   The video iframe.
  */
 function video_embed_field_handle_vimeo($url, $settings) {
-  // Get ID of video from URL
+  // Get ID of video from URL.
   $id = _video_embed_field_get_vimeo_id($url);
   if (!$id) {
     return array(
@@ -407,21 +454,27 @@ function video_embed_field_handle_vimeo($url, $settings) {
     );
   }
 
-  // Construct the embed code
+  // Construct the embed code.
   $settings['portrait'] = 0;
   $settings_str = _video_embed_code_get_settings_str($settings);
 
   return array(
     '#markup' => '<iframe width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//player.vimeo.com/video/' . $id .
-                 '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>',
+    '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>',
   );
 }
 
 /**
- * Get the thumbnail url for youtube videos
+ * Gets the thumbnail url for vimeo videos.
+ *
+ * @param string $url
+ *   The video URL.
+ *
+ * @return array
+ *   The video thumbnail information.
  */
 function video_embed_field_handle_vimeo_thumbnail($url) {
-  // Get ID of video from URL
+  // Get ID of video from URL.
   $id = _video_embed_field_get_vimeo_id($url);
   $info = array(
     'id' => $id,
@@ -438,16 +491,16 @@ function video_embed_field_handle_vimeo_thumbnail($url) {
 }
 
 /**
- * Get video data for a Vimeo video URL
+ * Get video data for a Vimeo video URL.
  *
  * @param string $url
- *   A Vimeo video URL to get data for
+ *   A Vimeo video URL to get data for.
  *
- * @return array|false $data
- *   An array of video data, or FALSE if unable to fetch data
+ * @return array|false
+ *   An array of video data, or FALSE if unable to fetch data.
  */
 function video_embed_field_handle_vimeo_data($url) {
-  // Get ID of video from URL
+  // Get ID of video from URL.
   $id = _video_embed_field_get_vimeo_id($url);
   if ($id) {
     $response = drupal_http_request('http://vimeo.com/api/v2/video/' . $id . '.php');
@@ -461,6 +514,12 @@ function video_embed_field_handle_vimeo_data($url) {
 
 /**
  * Defines the form elements for the Vimeo configuration form.
+ *
+ * @param array $defaults
+ *   The form default values.
+ *
+ * @return array
+ *   The provider settings form array.
  */
 function video_embed_field_handler_vimeo_form($defaults) {
   $form = array();
@@ -495,19 +554,19 @@ function video_embed_field_handler_vimeo_form($defaults) {
   $form['portrait'] = array(
     '#type' => 'checkbox',
     '#title' => t('Overlay Author Thumbnail'),
-    '#description' => t('Overlay the author\'s thumbnail before the video is played.'),
+    '#description' => t("Overlay the author's thumbnail before the video is played."),
     '#default_value' => $defaults['portrait'],
   );
   $form['title'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Overlay Video\'s Title'),
-    '#description' => t('Overlay the video\'s title before the video is played.'),
+    '#title' => t("Overlay Video's Title"),
+    '#description' => t("Overlay the video's title before the video is played."),
     '#default_value' => $defaults['title'],
   );
   $form['byline'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Overlay Video\'s Byline'),
-    '#description' => t('Overlay the video\'s description before the video is played.'),
+    '#title' => t("Overlay Video's Byline"),
+    '#description' => t("Overlay the video's description before the video is played."),
     '#default_value' => $defaults['byline'],
   );
   $form['overridable'] = array(
@@ -525,7 +584,7 @@ function video_embed_field_handler_vimeo_form($defaults) {
   $form['loop'] = array(
     '#type' => 'checkbox',
     '#title' => t('Loop'),
-    '#description' => t('Loop the video\'s playback'),
+    '#description' => t("Loop the video's playback"),
     '#default_value' => $defaults['loop'],
   );
   return $form;
@@ -533,13 +592,28 @@ function video_embed_field_handler_vimeo_form($defaults) {
 
 /**
  * Validates the form elements for the Vimeo configuration form.
+ *
+ * @param array $element
+ *   The form element to validate.
+ * @param array $form_state
+ *   The form to validate state.
+ * @param array $form
+ *   The form to validate structure.
  */
 function video_embed_field_handler_vimeo_form_validate($element, &$form_state, $form) {
   video_embed_field_validate_dimensions($element);
 }
 
 /**
- * Calculates the min index for use in finding the id of a youtube video
+ * Calculates the min index for use in finding the id of a youtube video.
+ *
+ * @param string $pos1
+ *   The first index.
+ * @param string $pos2
+ *   The second index.
+ *
+ * @return string
+ *   The min index.
  */
 function _video_embed_get_min($pos1, $pos2) {
   if (!$pos1) {
