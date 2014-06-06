@@ -24,7 +24,6 @@ function video_embed_facebook_video_embed_handler_info() {
     'defaults' => array(
       'width' => 640,
       'height' => 360,
-      'allowfullscreen' => TRUE,
     ),
   );
 
@@ -55,13 +54,6 @@ function video_embed_facebook_form($defaults) {
     '#title' => t('Player Width'),
     '#description' => t('The width of the player.'),
     '#default_value' => $defaults['width'],
-  );
-
-  $form['allowfullscreen'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Allow Fullscreen'),
-    '#desecription' => t('This will allow the video to be fullscreened.'),
-    '#default_value' => $defaults['allowfullscreen'],
   );
 
   return $form;
@@ -97,19 +89,10 @@ function video_embed_facebook_handle_video($url, $settings) {
 
   if ($id) {
     // Our embed code.
-    $embed = '<object>
-      <param name="allowfullscreen" value="!fullscreen" />
-      <param name="allowscriptaccess" value="always" />
-      <param name="movie" value="https://www.facebook.com/v/!id" />
-      <param name="wmode" value="opaque" />
-      <embed src="https://www.facebook.com/v/!id" type="application/x-shockwave-flash" wmode="opaque"
-        allowscriptaccess="always" allowfullscreen="!fullscreen" width="!width" height="!height">
-      </embed>
-    </object>';
+    $embed='<iframe src="https://www.facebook.com/video/embed?video_id=!id" width="!width" height="!height"></iframe> ';
     // Use format_string to replace our placeholders with the settings values.
     $embed = format_string($embed, array(
       '!id' => $id,
-      '!fullscreen' => $settings['allowfullscreen'] ? 'true' : 'false',
       '!width' => $settings['width'],
       '!height' => $settings['height'],
     ));
@@ -153,8 +136,8 @@ function video_embed_facebook_handle_thumbnail($url) {
 function _video_embed_facebook_get_video_id($url) {
   // Parse_url is an easy way to break a url into its components.
   $matches = array();
-  preg_match('/(.*)?v=([^&#]*)/', $url, $matches);
-  // If the v get parameter is set, return it.
+  preg_match('/(.*)?[v|video_id]=([^&#]*)/', $url, $matches);
+  // If the v or video_id get parameters are set, return it.
   if ($matches && !empty($matches[2])) {
     return $matches[2];
   }
