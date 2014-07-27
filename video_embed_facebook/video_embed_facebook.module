@@ -16,6 +16,7 @@ function video_embed_facebook_video_embed_handler_info() {
     'title' => 'Facebook Video',
     'function' => 'video_embed_facebook_handle_video',
     'thumbnail_function' => 'video_embed_facebook_handle_thumbnail',
+    'thumbnail_default' => drupal_get_path('module', 'video_embed_facebook') . '/img/facebook.jpg',
     'form' => 'video_embed_facebook_form',
     'form_validate' => 'video_embed_field_handler_youtube_form_validate',
     'domains' => array(

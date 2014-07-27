@@ -14,6 +14,7 @@ function video_embed_brightcove_video_embed_handler_info() {
   $handlers['brightcove'] = array(
     'title' => 'Brightcove Video',
     'function' => 'video_embed_brightcove_handle_video',
+    'thumbnail_default' => drupal_get_path('module', 'video_embed_brightcove') . '/img/brightcove.jpg',
     'form' => 'video_embed_brightcove_form',
     'form_validate' => 'video_embed_field_handler_brightcove_form_validate',
     'domains' => array(

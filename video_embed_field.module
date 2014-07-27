@@ -208,7 +208,7 @@ function video_embed_get_handlers() {
     }
     else {
       $handlers = module_invoke_all('video_embed_handler_info');
-      drupal_alter('video_embed_field_handlers', $handlers);
+      drupal_alter('video_embed_handler_info', $handlers);
       cache_set('video_embed_field_handlers', $handlers);
     }
   }
@@ -465,13 +465,21 @@ function theme_video_embed_field_colorbox_code($variables) {
  *   String representing the url of the thumbnail, or FALSE on error.
  */
 function video_embed_field_thumbnail_url($url) {
-  $handler = video_embed_get_handler($url);
-  if ($handler && isset($handler['thumbnail_function']) && function_exists($handler['thumbnail_function'])) {
-    $info = call_user_func($handler['thumbnail_function'], $url);
-    $info['handler'] = $handler['name'];
-    return $info;
+  $info = FALSE;
+  if ($handler = video_embed_get_handler($url)) {
+    if (isset($handler['thumbnail_function']) && function_exists($handler['thumbnail_function'])) {
+      $info = call_user_func($handler['thumbnail_function'], $url);
+      $info['handler'] = $handler['name'];
+    }
+    if (empty($info['url']) && isset($handler['thumbnail_default']) && file_exists($handler['thumbnail_default'])) {
+      $info = array(
+        'handler' => $handler['name'],
+        'id' => 'default_thumbnail',
+        'url' => $handler['thumbnail_default'],
+      );
+    }
   }
-  return FALSE;
+  return $info;
 }
 
 /**

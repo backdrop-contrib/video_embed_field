@@ -14,6 +14,8 @@
  * 'function' : required, the function used to generate the embed code.
  * 'thumbnail_function' : optional, the function used to provide the thumbnail
  *   for a video.
+ * 'thumbnail_default : optional, the default thumbnail image to display in case
+ *   thumbnail_function does not exist or has no results.
  * 'data_function' : optional, the function to return an array of video data.
  * 'form' : required, the function that returns the settings form for your
  *   provider.
@@ -24,6 +26,7 @@
  * 'defaults' : default values for each setting made configurable in your form
  *   function.
  *
+ * @see hook_video_embed_handler_info_alter()
  * @see below for function definitions
  */
 function hook_video_embed_handler_info() {
@@ -33,6 +36,7 @@ function hook_video_embed_handler_info() {
     'title' => 'UStream',
     'function' => 'your_module_handle_ustream',
     'thumbnail_function' => 'your_module_handle_ustream_thumbnail',
+    'thumbnail_default' => drupal_get_path('module', 'your_module') . '/img/ustream.jpg',
     'data_function' => 'your_module_handler_ustream_data',
     'form' => 'your_module_handler_ustream_form',
     'form_validate' => 'your_module_handler_ustream_form_validate',
@@ -46,6 +50,20 @@ function hook_video_embed_handler_info() {
   );
 
   return $handlers;
+}
+
+/**
+ * Performs alterations on video_embed_field handlers.
+ *
+ * @param $info
+ *   Array of information on video handlers exposed by
+ *   hook_video_embed_handler_info() implementations.
+ */
+function hook_video_embed_handler_info_alter(&$info) {
+  // Change the thumbnail function for 'ustream' provider.
+  if (isset($info['ustream'])) {
+    $info['ustream']['thumbnail_function'] = 'your_module_handle_ustream_thumbnail_alter';
+  }
 }
 
 /**
