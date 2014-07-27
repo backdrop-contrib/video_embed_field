@@ -200,15 +200,17 @@ function video_embed_field_video_style_load($name) {
  * @see video_embed_field.api.php
  */
 function video_embed_get_handlers() {
-  $handlers = cache_get('video_embed_field_handlers');
+  $handlers = &drupal_static(__FUNCTION__);
 
-  if ($handlers === FALSE) {
-    $handlers = module_invoke_all('video_embed_handler_info');
-    drupal_alter('video_embed_field_handlers', $handlers);
-    cache_set('video_embed_field_handlers', $handlers);
-  }
-  else {
-    $handlers = $handlers->data;
+  if (!isset($handlers)) {
+    if ($handlers = cache_get('video_embed_field_handlers')) {
+      $handlers = $handlers->data;
+    }
+    else {
+      $handlers = module_invoke_all('video_embed_handler_info');
+      drupal_alter('video_embed_field_handlers', $handlers);
+      cache_set('video_embed_field_handlers', $handlers);
+    }
   }
 
   return $handlers;
