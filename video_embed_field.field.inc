@@ -463,6 +463,11 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     elseif ($display['type'] == 'video_embed_field_thumbnail') {
       if (isset($item['thumbnail_path'])) {
         if ($display['settings']['image_link'] == 'source') {
+          if ($ret = parse_url($item['video_url'])) {
+            if (!isset($ret["scheme"])) {
+              $item['video_url'] = "http://{$item['video_url']}";
+            }
+          }
           $path = array(
             'path' => $item['video_url'],
             'options' => array(),
@@ -483,6 +488,11 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     }
     elseif ($display['type'] == 'video_embed_field_thumbnail_colorbox') {
       if (isset($item['thumbnail_path'])) {
+        if ($ret = parse_url($item['video_url'])) {
+          if (!isset($ret["scheme"])) {
+            $item['video_url'] = "http://{$item['video_url']}";
+          }
+        }
         $element[$delta] = array(
           array(
             '#theme' => 'video_embed_field_colorbox_code',
