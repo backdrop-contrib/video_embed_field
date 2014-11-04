@@ -224,13 +224,15 @@ function video_embed_field_field_presave($entity_type, $entity, $field, $instanc
 
       $response = drupal_http_request($thumb_url);
       if (!isset($response->error)) {
-        file_save_data($response->data, $local_path, TRUE);
+        file_save_data($response->data, $local_path, FILE_EXISTS_REPLACE);
       }
       else {
         @copy($thumb_url, $local_path);
       }
 
       $items[$delta]['thumbnail_path'] = $local_path;
+      // Delete any image derivatives at the original image path.
+      image_path_flush($local_path);
     }
     // Couldn't get the thumbnail for whatever reason.
     else {
