@@ -530,8 +530,6 @@ function video_embed_field_get_ajax_url($video_url, $video_style) {
   return array(
     'path' => 'vef/load/' . $hash,
     'options' => array(
-      'html' => TRUE,
-      'absolute' => TRUE,
       'attributes' => array(
         'class' => array(
           'colorbox-load',
