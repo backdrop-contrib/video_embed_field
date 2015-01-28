@@ -17,6 +17,7 @@ function video_embed_field_field_info() {
       'instance_settings' => array(
         'description_field' => 0,
         'description_length' => 128,
+        'allowed_providers' => array_keys(video_embed_get_handlers()),
       ),
       'default_widget' => 'video_embed_field_video',
       'default_formatter' => 'video_embed_field',
@@ -89,12 +90,25 @@ function entity_property_verbatim_get_url($data, array $options, $name, $type, $
 function video_embed_field_field_instance_settings_form($field, $instance) {
   $settings = $instance['settings'];
 
+  $providers = video_embed_get_handlers();
+  $allowed_providers = array();
+  foreach ($providers as $provider_id => $definition) {
+    $allowed_providers[$provider_id] = $definition['title'];
+  }
+
+  $form['allowed_providers'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Select the allowed video providers'),
+    '#options' => $allowed_providers,
+    '#default_value' => isset($settings['allowed_providers']) ? $settings['allowed_providers'] : array(),
+    '#weight' => 10,
+  );
+
   $form['description_field'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enable <em>Description</em> field'),
     '#default_value' => isset($settings['description_field']) ? $settings['description_field'] : '',
     '#description' => t('The description field allows users to enter a description about the video.'),
-    '#parents' => array('instance', 'settings', 'description_field'),
     '#weight' => 11,
   );
 
@@ -102,10 +116,14 @@ function video_embed_field_field_instance_settings_form($field, $instance) {
     '#type' => 'textfield',
     '#title' => t('Max description length'),
     '#default_value' => isset($settings['description_length']) ? $settings['description_length'] : 128,
-    '#parents' => array('instance', 'settings', 'description_length'),
     '#weight' => 12,
     '#size' => 5,
     '#maxlength' => 5,
+    '#states' => array(
+      'visible' => array(
+        ':input[id="edit-instance-settings-description-field"]' => array('checked' => TRUE),
+      ),
+    ),
   );
 
   return $form;
@@ -189,7 +207,7 @@ function video_embed_field_field_validate($entity_type, $entity, $field, $instan
         if (stripos($host, 'www.') > -1) {
           $host = substr($host, 4);
         }
-        $domains = _video_embed_field_get_provider_domains();
+        $domains = _video_embed_field_get_instance_provider_domains($instance);
         if (!array_key_exists($host, $domains)) {
           $errors[$field['field_name']][$langcode][$delta][] = array(
             'error' => t('Unsupported Video Provider'),
@@ -439,9 +457,11 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
         '#markup' => $item['description'],
         '#suffix' => '</div>',
       );
+      $alt = $item['description'];
     }
     else {
       $description = array();
+      $alt = '';
     }
 
     // Render the field.
@@ -478,7 +498,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
 
         $element[$delta] = array(
           '#theme' => 'image_formatter',
-          '#item' => array('uri' => $item['thumbnail_path']),
+          '#item' => array('uri' => $item['thumbnail_path'], 'alt' => $alt),
           '#image_style' => $display['settings']['image_style'],
           '#path' => isset($path) ? $path : '',
         );
@@ -500,6 +520,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
             '#theme' => 'video_embed_field_colorbox_code',
             '#image_url' => $item['thumbnail_path'],
             '#image_style' => $display['settings']['image_style'],
+            '#image_alt' => $alt,
             '#video_url' => $item['video_url'],
             '#video_style' => $display['settings']['video_style'],
             '#video_data' => unserialize($item['video_data']),
