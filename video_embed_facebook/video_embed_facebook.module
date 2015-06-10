@@ -137,10 +137,10 @@ function video_embed_facebook_handle_thumbnail($url) {
 function _video_embed_facebook_get_video_id($url) {
   // Parse_url is an easy way to break a url into its components.
   $matches = array();
-  preg_match('/(.*)?[v|video_id]=([^&#]*)/', $url, $matches);
+  preg_match('/(?:.*)(?:v=|video_id=|videos\/|videos\/v.\.\d+\/)(\d+).*/', $url, $matches);
   // If the v or video_id get parameters are set, return it.
-  if ($matches && !empty($matches[2])) {
-    return check_plain($matches[2]);
+  if ($matches && !empty($matches[1])) {
+    return check_plain($matches[1]);
   }
   // Otherwise return false.
   return FALSE;
