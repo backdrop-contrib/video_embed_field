@@ -90,12 +90,12 @@ function video_embed_facebook_handle_video($url, $settings) {
 
   if ($id) {
     // Our embed code.
-    $embed='<iframe src="//www.facebook.com/video/embed?video_id=!id" width="!width" height="!height"></iframe> ';
+    $embed='<iframe src="//www.facebook.com/video/embed?video_id=!id" width="@width" height="@height"></iframe> ';
     // Use format_string to replace our placeholders with the settings values.
     $embed = format_string($embed, array(
       '!id' => $id,
-      '!width' => $settings['width'],
-      '!height' => $settings['height'],
+      '@width' => $settings['width'],
+      '@height' => $settings['height'],
     ));
 
     $video = array(
@@ -140,7 +140,7 @@ function _video_embed_facebook_get_video_id($url) {
   preg_match('/(.*)?[v|video_id]=([^&#]*)/', $url, $matches);
   // If the v or video_id get parameters are set, return it.
   if ($matches && !empty($matches[2])) {
-    return $matches[2];
+    return check_plain($matches[2]);
   }
   // Otherwise return false.
   return FALSE;

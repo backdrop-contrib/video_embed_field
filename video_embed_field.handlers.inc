@@ -146,7 +146,7 @@ function _video_embed_field_get_youtube_id($url) {
       $id = substr($url, $pos);
     }
   }
-  return $id;
+  return check_plain($id);
 }
 
 /**
