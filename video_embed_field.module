@@ -577,15 +577,7 @@ function _video_embed_field_get_provider_domains() {
  *   An array containing the allowed video domains.
  */
 function _video_embed_field_get_instance_provider_domains($instance) {
-  $domains = _video_embed_field_get_provider_domains();
-
-  foreach ($domains as $domain => $provider) {
-    if (empty($instance['settings']['allowed_providers'][$provider])) {
-      unset($domains[$domain]);
-    }
-  }
-
-  return $domains;
+  return array_intersect(_video_embed_field_get_provider_domains(), $instance['settings']['allowed_providers']);
 }
 
 /**
