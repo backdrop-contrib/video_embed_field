@@ -163,16 +163,21 @@ function _video_embed_field_get_youtube_id($url) {
 function video_embed_field_handle_youtube($url, $settings) {
   $output = array();
 
-  // Grab the minutes and seconds, and just convert it down to seconds.
-  preg_match('/#t=((?P<min>\d+)m)?((?P<sec>\d+)s)?/', $url, $matches);
-
-  // Give it some default data in case there is no #t=...
-  $matches += array(
-    "min" => 0,
-    "sec" => 0,
-  );
-  $time = ($matches["min"] * 60) + $matches["sec"];
-  $settings['start'] = $time;
+  if(preg_match('/#t=((?P<min>\d+)m)?((?P<sec>\d+)s)?((?P<tinsec>\d+))?/', $url, $matches)){
+    if(isset($matches['tinsec'])){
+      $settings['start'] = $matches['tinsec']; // url already in form #t=125 for 2 minutes and 5 seconds
+    } else {
+      // url in form #t=2m5s or with other useless data, this is why we still keep adding the default data..
+      // give it some default data in case there is no #t=...
+      $matches += array(
+        "min" => 0,
+        "sec" => 0,
+      );
+      if ($time = ($matches["min"] * 60) + $matches["sec"]) {
+        $settings['start'] = $time;
+      }
+    }
+  }
 
   $id = _video_embed_field_get_youtube_id($url);
   if (!$id) {
