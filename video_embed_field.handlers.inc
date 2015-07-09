@@ -38,6 +38,7 @@ function video_embed_field_video_embed_handler_info() {
       'modestbranding' => 0,
       'theme' => 'dark',
       'iv_load_policy' => 1,
+      'class' => '',
     ),
   );
 
@@ -61,6 +62,7 @@ function video_embed_field_video_embed_handler_info() {
       'autoplay' => 0,
       'loop' => 0,
       'froogaloop' => 0,
+      'class' => ''
     ),
   );
 
@@ -185,11 +187,16 @@ function video_embed_field_handle_youtube($url, $settings) {
     $output['#markup'] = l($url, $url);
     return $output;
   }
+  
+  // Add class to variable to avoid adding it to URL param string.
+  $class = $settings['class'];
+  unset($settings['class']);
+
   // Construct the embed code.
   $settings['wmode'] = 'opaque';
   $settings_str = _video_embed_code_get_settings_str($settings);
 
-  $output['#markup'] = '<iframe width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+  $output['#markup'] = '<iframe class="' . check_plain($class) . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
 
   return $output;
 }
@@ -406,6 +413,13 @@ function video_embed_field_handler_youtube_form($defaults) {
     '#default_value' => $defaults['autohide'],
   );
 
+  $form['class'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Player CSS class'),
+    '#description' => t('CSS class to add to the player'),
+    '#default_value' => $defaults['class'],
+  );
+
   return $form;
 }
 
@@ -494,10 +508,14 @@ function video_embed_field_handle_vimeo($url, $settings) {
   }
   unset($settings['froogaloop']);
 
+  // Add class to variable to avoid adding it to URL param string.
+  $class = $settings['class'];
+  unset($settings['class']);
+
   $settings_str = _video_embed_code_get_settings_str($settings);
 
   return array(
-    '#markup' => '<iframe id="' . $settings['player_id'] . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//player.vimeo.com/video/' . $id .
+    '#markup' => '<iframe class="' . check_plain($class) . '" id="' . $settings['player_id'] . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//player.vimeo.com/video/' . $id .
     '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>',
   );
 }
@@ -619,6 +637,13 @@ function video_embed_field_handler_vimeo_form($defaults) {
     '#title' => t('Enable froogaloop support'),
     '#description' => t("Enables Froogallop Vimeo's library support"),
     '#default_value' => $defaults['loop'],
+  );
+
+  $form['class'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Player CSS class'),
+    '#description' => t('CSS class to add to the player'),
+    '#default_value' => $defaults['class'],
   );
 
   return $form;
