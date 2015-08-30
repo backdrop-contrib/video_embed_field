@@ -63,7 +63,7 @@ function video_embed_field_retrieve_video() {
  *   A bunch of youtube videos.
  */
 function video_embed_field_generate_videos() {
-  $videos = &drupal_static(__FUNCTION__);
+  $videos = &backdrop_static(__FUNCTION__);
   if (!isset($videos)) {
     $videos = array();
 

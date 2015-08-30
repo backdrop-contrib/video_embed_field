@@ -36,7 +36,7 @@ function hook_video_embed_handler_info() {
     'title' => 'UStream',
     'function' => 'your_module_handle_ustream',
     'thumbnail_function' => 'your_module_handle_ustream_thumbnail',
-    'thumbnail_default' => drupal_get_path('module', 'your_module') . '/img/ustream.jpg',
+    'thumbnail_default' => backdrop_get_path('module', 'your_module') . '/img/ustream.jpg',
     'data_function' => 'your_module_handler_ustream_data',
     'form' => 'your_module_handler_ustream_form',
     'form_validate' => 'your_module_handler_ustream_form_validate',

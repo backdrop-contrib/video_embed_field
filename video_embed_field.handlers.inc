@@ -18,7 +18,7 @@ function video_embed_field_video_embed_handler_info() {
     'title' => 'Youtube',
     'function' => 'video_embed_field_handle_youtube',
     'thumbnail_function' => 'video_embed_field_handle_youtube_thumbnail',
-    'thumbnail_default' => drupal_get_path('module', 'video_embed_field') . '/img/youtube.jpg',
+    'thumbnail_default' => backdrop_get_path('module', 'video_embed_field') . '/img/youtube.jpg',
     'data_function' => 'video_embed_field_handle_youtube_data',
     'form' => 'video_embed_field_handler_youtube_form',
     'form_validate' => 'video_embed_field_handler_youtube_form_validate',
@@ -46,7 +46,7 @@ function video_embed_field_video_embed_handler_info() {
     'title' => 'Vimeo',
     'function' => 'video_embed_field_handle_vimeo',
     'thumbnail_function' => 'video_embed_field_handle_vimeo_thumbnail',
-    'thumbnail_default' => drupal_get_path('module', 'video_embed_field') . '/img/vimeo.jpg',
+    'thumbnail_default' => backdrop_get_path('module', 'video_embed_field') . '/img/vimeo.jpg',
     'form' => 'video_embed_field_handler_vimeo_form',
     'form_validate' => 'video_embed_field_handler_vimeo_form_validate',
     'domains' => array(
@@ -223,7 +223,7 @@ function video_embed_field_handle_youtube_thumbnail($url) {
     $id = substr($id, $start, $length);
     $info['id'] = $id;
     // Playlist info is stored in XML. The thumbnail is in there.
-    $xml = drupal_http_request('http://gdata.youtube.com/feeds/api/playlists/' . $id);
+    $xml = backdrop_http_request('http://gdata.youtube.com/feeds/api/playlists/' . $id);
     if (!isset($xml->error)) {
       $xml = new SimpleXMLElement($xml->data);
       $media = $xml->children('http://search.yahoo.com/mrss/');
@@ -255,7 +255,7 @@ function video_embed_field_handle_youtube_data($url) {
   $id = _video_embed_field_get_youtube_id($url);
 
   if ($id) {
-    $response = drupal_http_request('http://gdata.youtube.com/feeds/api/videos/' . $id . '?v=2&alt=json');
+    $response = backdrop_http_request('http://gdata.youtube.com/feeds/api/videos/' . $id . '?v=2&alt=json');
     if (!isset($response->error)) {
       $data = json_decode($response->data);
       $data = isset($data->entry) ? (array) $data->entry : (array) $data->feed;
@@ -450,7 +450,7 @@ function _video_embed_field_get_vimeo_data($url) {
   // Set oembed endpoint
   $oembed_endpoint = 'http://vimeo.com/api/oembed';
   // Fetch vimeo data
-  $response = drupal_http_request($oembed_endpoint . '.json?url=' . rawurlencode($url));
+  $response = backdrop_http_request($oembed_endpoint . '.json?url=' . rawurlencode($url));
 
   try {
     return json_decode($response->data, TRUE);
@@ -502,7 +502,7 @@ function video_embed_field_handle_vimeo($url, $settings) {
   }
 
   // Construct the embed code.
-  $settings['player_id'] = drupal_html_id('vimeo-' . $id);
+  $settings['player_id'] = backdrop_html_id('vimeo-' . $id);
   if (!empty($settings['froogaloop'])) {
     $settings['api'] = 1;
   }

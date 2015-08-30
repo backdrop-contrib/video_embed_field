@@ -7,7 +7,7 @@
 
 /**
  * Defines a field handler that can display the thumbnail_path url instead of
- * the drupal internal uri.
+ * the backdrop internal uri.
  */
 class views_embed_field_views_handler_field_thumbnail_path extends views_handler_field {
 

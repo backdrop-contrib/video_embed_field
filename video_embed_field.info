@@ -1,11 +1,7 @@
-name = "Video Embed Field"
-description = "Expose a field type for embedding videos from youtube or vimeo."
-core = 7.x
+name = Video Embed Field
+description = Expose a field type for embedding videos from youtube or vimeo.
 package = Media
-configure = admin/config/media/vef_video_styles
-
-files[] = video_embed_field.migrate.inc
-files[] = views/handlers/views_embed_field_views_handler_field_thumbnail_path.inc
-
-dependencies[] = ctools
+type = module
+backdrop = 1.x
 dependencies[] = image
+configure = admin/config/media/vef_video_styles

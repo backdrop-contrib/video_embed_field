@@ -1,6 +1,6 @@
-name = "Video Embed Brightcove"
-description = "Provides Brightcove handler for Video Embed Fields."
-core = 7.x
+name = Video Embed Brightcove
+description = Provides Brightcove handler for Video Embed Fields.
+backdrop = 1.x
 package = Media
 configure = admin/config/media/vef_video_styles
 

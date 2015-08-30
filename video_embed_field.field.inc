@@ -162,7 +162,7 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
     '#attributes' => array('class' => array('video_embed_url')),
     '#attached' => array(
       'css' => array(
-        drupal_get_path('module', 'video_embed_field') . '/video_embed_field.form.css',
+        backdrop_get_path('module', 'video_embed_field') . '/css/video_embed_field.form.css',
       ),
     ),
     '#default_value' => isset($items[$delta]['video_url']) ? $items[$delta]['video_url'] : '',
@@ -237,10 +237,10 @@ function video_embed_field_field_presave($entity_type, $entity, $field, $instanc
       $thumb_extension = pathinfo($thumb_url, PATHINFO_EXTENSION);
       $local_path = "public://video_embed_field_thumbnails/{$info['handler']}/{$info['id']}.$thumb_extension";
 
-      $dirname = drupal_dirname($local_path);
+      $dirname = backdrop_dirname($local_path);
       file_prepare_directory($dirname, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
 
-      $response = drupal_http_request($thumb_url);
+      $response = backdrop_http_request($thumb_url);
       if (!isset($response->error)) {
         file_save_data($response->data, $local_path, FILE_EXISTS_REPLACE);
       }
@@ -543,7 +543,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
     }
     // Get the HTML instead of the array, because we append it to the suffix.
     // This way, the thumbnail link doesn't make the description a link as well.
-    $description_html = drupal_render($description);
+    $description_html = backdrop_render($description);
 
     $pos = isset($settings['description_position']) ? $settings['description_position'] : 'bottom';
     if ($pos == 'top') {
