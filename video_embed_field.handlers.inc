@@ -47,6 +47,7 @@ function video_embed_field_video_embed_handler_info() {
     'function' => 'video_embed_field_handle_vimeo',
     'thumbnail_function' => 'video_embed_field_handle_vimeo_thumbnail',
     'thumbnail_default' => drupal_get_path('module', 'video_embed_field') . '/img/vimeo.jpg',
+    'data_function' => '_video_embed_field_get_vimeo_data',
     'form' => 'video_embed_field_handler_vimeo_form',
     'form_validate' => 'video_embed_field_handler_vimeo_form_validate',
     'domains' => array(
