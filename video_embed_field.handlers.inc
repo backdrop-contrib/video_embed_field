@@ -188,7 +188,7 @@ function video_embed_field_handle_youtube($url, $settings) {
     $output['#markup'] = l($url, $url);
     return $output;
   }
-  
+
   // Add class to variable to avoid adding it to URL param string.
   $class = $settings['class'];
   unset($settings['class']);
@@ -258,7 +258,7 @@ function video_embed_field_handle_youtube_data($url) {
   if ($id) {
 
     $options['v'] = 3;
-    $options['key'] =  variable_get('video_embed_field_youtube_v3_api_key', '');
+    $options['key'] = variable_get('video_embed_field_youtube_v3_api_key', '');
     $options['part'] = 'snippet';
     $options['id'] = $id;
 
