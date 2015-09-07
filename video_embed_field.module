@@ -93,6 +93,15 @@ function video_embed_field_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['admin/config/media/vef_video_styles/settings'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('video_embed_field_settings_form'),
+    '#type' => MENU_LOCAL_TASK,
+    'file' => 'video_embed_field.admin.inc',
+    'access callback' => TRUE,
+  );
+
   return $items;
 }
 

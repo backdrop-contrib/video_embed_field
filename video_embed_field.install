@@ -97,6 +97,13 @@ function video_embed_field_schema() {
 }
 
 /**
+ * Implements hook_uninstall().
+ */
+function video_embed_field_uninstall() {
+  variable_del('video_embed_field_youtube_api_key');
+}
+
+/**
  * Adds an optional description form.
  */
 function video_embed_field_update_7000() {
