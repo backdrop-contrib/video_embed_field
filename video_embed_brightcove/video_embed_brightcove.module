@@ -91,7 +91,7 @@ function video_embed_brightcove_handle_video($url, $settings) {
 
   if (isset($parameters['id']) && isset($parameters['key'])) {
     // Embed code.
-    $embed = '<object class="@class" id="myExperience" class="BrightcoveExperience">
+    $embed = '<object class="@class BrightcoveExperience" id="myExperience">
       <param name="bgcolor" value="#FFFFFF" />
       <param name="width" value="@width" />
       <param name="height" value="@height" />
