@@ -257,7 +257,7 @@ function video_embed_field_handle_youtube_data($url) {
 
   if ($id) {
     $options['v'] = 3;
-    $options['key'] = variable_get('video_embed_field_youtube_v3_api_key', '');
+    $options['key'] = config_get('video_embed_field.settings', 'youtube_v3_api_key');
     $options['part'] = 'snippet';
     $options['id'] = $id;
 
