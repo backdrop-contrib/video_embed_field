@@ -47,6 +47,7 @@ function video_embed_field_video_embed_handler_info() {
     'function' => 'video_embed_field_handle_vimeo',
     'thumbnail_function' => 'video_embed_field_handle_vimeo_thumbnail',
     'thumbnail_default' => backdrop_get_path('module', 'video_embed_field') . '/img/vimeo.jpg',
+    'data_function' => '_video_embed_field_get_vimeo_data',
     'form' => 'video_embed_field_handler_vimeo_form',
     'form_validate' => 'video_embed_field_handler_vimeo_form_validate',
     'domains' => array(
@@ -187,14 +188,14 @@ function video_embed_field_handle_youtube($url, $settings) {
     $output['#markup'] = l($url, $url);
     return $output;
   }
-  
+
   // Add class to variable to avoid adding it to URL param string.
   $class = $settings['class'];
   unset($settings['class']);
 
   // Construct the embed code.
   $settings['wmode'] = 'opaque';
-  $settings_str = _video_embed_code_get_settings_str($settings);
+  $settings_str = urlencode(_video_embed_code_get_settings_str($settings));
 
   $output['#markup'] = '<iframe class="' . check_plain($class) . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
 
@@ -255,11 +256,16 @@ function video_embed_field_handle_youtube_data($url) {
   $id = _video_embed_field_get_youtube_id($url);
 
   if ($id) {
-    $response = backdrop_http_request('http://gdata.youtube.com/feeds/api/videos/' . $id . '?v=2&alt=json');
+    $options['v'] = 3;
+    $options['key'] = variable_get('video_embed_field_youtube_v3_api_key', '');
+    $options['part'] = 'snippet';
+    $options['id'] = $id;
+
+    $response = backdrop_http_request(url('https://www.googleapis.com/youtube/v3/videos', array('query' => $options)));
+
     if (!isset($response->error)) {
       $data = json_decode($response->data);
-      $data = isset($data->entry) ? (array) $data->entry : (array) $data->feed;
-      return _video_embed_field_clean_up_youtube_data($data);
+      return _video_embed_field_clean_up_youtube_data($data->items);
     }
   }
 
