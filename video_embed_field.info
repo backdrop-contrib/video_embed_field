@@ -1,7 +1,8 @@
 name = Video Embed Field
-description = Expose a field type for embedding videos from youtube or vimeo.
+description = Expose a field type for embedding videos from YouTube or Vimeo.
 package = Media
 type = module
 backdrop = 1.x
+
 dependencies[] = image
 configure = admin/config/media/vef_video_styles

@@ -100,18 +100,18 @@ function video_embed_field_schema() {
  * Implements hook_update_last_removed().
  */
 function modulename_update_last_removed() {
-  return 7009;
+  return 7010;
 }
 
 /**
  * Move video_embed_field settings from variables to config.
  */
-function book_update_1000() {
+function video_embed_field_update_1000() {
   // Migrate variables to config.
   $config = config('video_embed_field.settings');
-  $config->set('colorbox_load', update_variable_get('colorbox_load', array('video_embed_field')));
+  $config->set('youtube_v3_api_key', update_variable_get('video_embed_field_youtube_v3_api_key', ''));
   $config->save();
 
   // Delete variables.
-  update_variable_del('colorbox_load');
+  update_variable_del('video_embed_field_youtube_v3_api_key');
 }
