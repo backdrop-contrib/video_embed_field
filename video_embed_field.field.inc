@@ -32,7 +32,7 @@ function video_embed_field_field_info() {
  */
 function video_embed_field_property_info_callback(&$info, $entity_type, $field, $instance, $field_type) {
   // Apply the default.
-  entity_metadata_field_default_property_callback($info, $entity_type, $field, $instance, $field_type);
+  entity_plus_metadata_field_default_property_callback($info, $entity_type, $field, $instance, $field_type);
 
   // Finally add in instance specific property info.
   $name = $field['field_name'];
