@@ -26,6 +26,7 @@ This module is a nice complement to the Video module in that video allows you to
 Current Maintainers
 -------------------
 
+- [serundeputy](https://github.com/serundeputy)
 - [Laryn Kragt Bakker](https://github.com/laryn) - [CEDC.org](https://cedc.org)](https://github.com/username).
 - Seeking additional maintainers.
 
