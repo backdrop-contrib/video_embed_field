@@ -23,20 +23,22 @@ This module provides a very simple solution to a simple problem : 'User needs to
 
 This module is a nice complement to the Video module in that video allows you to store videos locally on your site while this module allows you to reference remote videos from Youtube and Vimeo.
 
+Current Maintainers
+-------------------
 
-Original Drupal development was sponsored by Phase2 Technology
-----
+- [serundeputy](https://github.com/serundeputy)
+- [Laryn Kragt Bakker](https://github.com/laryn) - [CEDC.org](https://cedc.org)](https://github.com/username).
+- Seeking additional maintainers.
 
-Since January 2014, this module is maintained by plopesc
-Originally maintained by jec006
+Credits
+-------
 
-Supporting organizations: 
-Bluespark
-Maintenance support
+- Ported to Backdrop CMS by [serundeputy](https://github.com/serundeputy).
+- Maintained for Drupal 7 by [plopesc](https://github.com/plopesc), previously by [jec006](https://github.com/jec006).
+- Originally sponsored for Drupal by Phase2 Technology; supported by Bluespark.
 
-Project Information
-----
+License
+-------
 
-Ported to Backdrop by serundeputy
-
-Looking for maintainer(s) 
+This project is GPL v2 software. 
+See the LICENSE.txt file in this directory for complete text.
