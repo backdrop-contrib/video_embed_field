@@ -1,7 +1,8 @@
 name = Video Embed Brightcove
 description = Provides Brightcove handler for Video Embed Fields.
 backdrop = 1.x
+type = module
 package = Media
 configure = admin/config/media/vef_video_styles
 
-dependencies[] = "video_embed_field"
+dependencies[] = video_embed_field
