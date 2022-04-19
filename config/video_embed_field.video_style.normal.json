@@ -1,0 +1,35 @@
+{
+    "_config_name": "video_embed_field.video_style.normal",
+    "module": "video_embed_field",
+    "preset_type": "video_style",
+    "machine_name": "normal",
+    "title": "Normal",
+    "data": {
+        "youtube": {
+            "width": "640",
+            "height": "360",
+            "theme": "dark",
+            "autoplay": 0,
+            "vq": "large",
+            "rel": 0,
+            "showinfo": 1,
+            "modestbranding": 1,
+            "iv_load_policy": "1",
+            "controls": "1",
+            "autohide": "2",
+            "class": ""
+        },
+        "vimeo": {
+            "width": "640",
+            "height": "360",
+            "color": "00adef",
+            "portrait": 1,
+            "title": 1,
+            "byline": 1,
+            "autoplay": 0,
+            "loop": 0,
+            "froogaloop": 0,
+            "class": ""
+        }
+    }
+}
