@@ -7,4 +7,4 @@ backdrop = 1.x
 dependencies[] = image
 dependencies[] = entity_plus
 
-configure = admin/config/media/vef_video_styles
+configure = admin/config/media/vef/settings
