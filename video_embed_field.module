@@ -556,7 +556,6 @@ function video_embed_field_get_ajax_url($video_url, $video_style) {
       'attributes' => array(
         'class' => array(
           'colorbox-load',
-          'colorbox'
         ),
       ),
       'query' => array(
