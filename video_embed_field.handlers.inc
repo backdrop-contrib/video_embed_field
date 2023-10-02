@@ -26,6 +26,7 @@ function video_embed_field_video_embed_handler_info() {
       'youtube.com',
       'youtu.be',
       'm.youtube.com',
+      'youtube-nocookie.com',
     ),
     'defaults' => array(
       'width' => 640,
@@ -40,6 +41,7 @@ function video_embed_field_video_embed_handler_info() {
       'theme' => 'dark',
       'iv_load_policy' => 1,
       'class' => '',
+      'privacy' => 1,
     ),
   );
 
@@ -202,7 +204,10 @@ function video_embed_field_handle_youtube($url, $settings) {
   $data = video_embed_field_handle_youtube_data($url);
   $title = !empty($data) ? ' title="' . t('YouTube video') . ': ' . check_plain($data[0]['snippet']['title']) . '"' : ' title="' . t('YouTube video') . '"';
 
-  $output['#markup'] = '<iframe' . $title . ' class="' . check_plain($class) . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+  // Check if privacy mode is enabled.
+  $youtube_domain = (!empty($settings['privacy'])) ? 'www.youtube-nocookie.com' : 'www.youtube.com';
+
+  $output['#markup'] = '<iframe' . $title . ' class="' . check_plain($class) . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//' . $youtube_domain . '/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
 
   return $output;
 }
@@ -423,12 +428,17 @@ function video_embed_field_handler_youtube_form($defaults) {
     '#description' => t('Controls the autohide behavior of the youtube player controls.'),
     '#default_value' => $defaults['autohide'],
   );
-
   $form['class'] = array(
     '#type' => 'textfield',
     '#title' => t('Player CSS class'),
     '#description' => t('CSS class to add to the player'),
     '#default_value' => $defaults['class'],
+  );
+  $form['privacy'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Privacy-enhanced mode'),
+    '#description' => t('Enable privacy-enhanced mode so cookies won\'t be set until after a video is started.'),
+    '#default_value' => $defaults['privacy'],
   );
 
   return $form;
