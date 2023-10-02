@@ -199,7 +199,10 @@ function video_embed_field_handle_youtube($url, $settings) {
   $settings['wmode'] = 'opaque';
   $settings_str = urlencode(_video_embed_code_get_settings_str($settings));
 
-  $output['#markup'] = '<iframe class="' . check_plain($class) . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+  $data = video_embed_field_handle_youtube_data($url);
+  $title = !empty($data) ? ' title="' . t('YouTube video') . ': ' . check_plain($data[0]['snippet']['title']) . '"' : ' title="' . t('YouTube video') . '"';
+
+  $output['#markup'] = '<iframe' . $title . ' class="' . check_plain($class) . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
 
   return $output;
 }
@@ -523,8 +526,10 @@ function video_embed_field_handle_vimeo($url, $settings) {
 
   $settings_str = _video_embed_code_get_settings_str($settings);
 
+  $title = !empty($vimeo_data) ? ' title="' . t('Vimeo video') . ': ' . check_plain($vimeo_data['title']) . '"' : ' title="' . t('Vimeo video') . '"';
+
   return array(
-    '#markup' => '<iframe class="' . check_plain($class) . '" id="' . $settings['player_id'] . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//player.vimeo.com/video/' . $id .
+    '#markup' => '<iframe' . $title . ' class="' . check_plain($class) . '" id="' . $settings['player_id'] . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//player.vimeo.com/video/' . $id .
     '?' . $settings_str . '" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>',
   );
 }
