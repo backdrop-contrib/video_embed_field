@@ -4,7 +4,6 @@
  * @file
  * Form builder; Form for editing a video style.
  *
- * Used by CTools export ui.
  */
 
 /**

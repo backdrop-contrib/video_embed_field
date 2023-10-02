@@ -9,11 +9,6 @@
  * It simply allows users to embed videos from youtube and vimeo - and provides
  * hooks to allow other modules to provide more providers.
  *
- * Uses CTools Export UI to manage settings.
- *
- * @see ./plugins/export_ui/video_embed_field_export_ui.inc
- *
- * @author jec006, jdelaune
  */
 
 // Load all Field module hooks.
@@ -24,27 +19,6 @@ module_load_include('inc', 'video_embed_field', 'video_embed_field.admin');
 module_load_include('inc', 'video_embed_field', 'video_embed_field.handlers');
 // Load feeds mapping hooks.
 module_load_include('inc', 'video_embed_field', 'video_embed_field.feeds');
-
-/**
- * Implements hook_ctools_plugin_directory().
- */
-function video_embed_field_ctools_plugin_directory($module, $type) {
-  // Load the export_ui plugin.
-  if ($type == 'export_ui') {
-    return 'plugins/export_ui';
-  }
-}
-
-/**
- * Implements hook_ctools_plugin_api().
- *
- * Tell CTools that we support the default_mymodule_presets API.
- */
-function video_embed_field_ctools_plugin_api($owner, $api) {
-  if ($owner == 'video_embed_field' && $api == 'default_video_embed_styles') {
-    return array('version' => 1);
-  }
-}
 
 /**
  * Implements hook_default_video_styles().
@@ -187,9 +161,6 @@ function video_embed_field_video_styles() {
 /**
  * Load a style by style name. May be used as a loader for menu items.
  *
- * Note that you may also use ctools_export_load_object with the key being
- * vef_video_styles
- *
  * @param string $name
  *   The name of the style.
  *
@@ -202,7 +173,7 @@ function video_embed_field_video_styles() {
  */
 function video_embed_field_video_style_load($name) {
   $styles = video_embed_field_video_styles();
-  
+
   return isset($styles[$name]) ? $styles[$name] : FALSE;
 }
 
@@ -750,7 +721,6 @@ function video_embed_field_preset_types() {
       'path_description' => 'Administer Video Embed Field\'s video styles.',
       'id_name' => 'Style',
       'permission' => 'administer video styles',
-      'individual' => TRUE,
     ),
   );
 }

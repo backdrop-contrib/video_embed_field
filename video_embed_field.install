@@ -6,11 +6,6 @@
  */
 
 /**
- * Install file for video_embed_field module
- * @author jcaldwell
- */
-
-/**
  * Implements hook_field_schema().
  */
 function video_embed_field_field_schema($field) {
@@ -54,49 +49,6 @@ function video_embed_field_field_schema($field) {
 }
 
 /**
- * Implements hook_schema().
- */
-function video_embed_field_schema() {
-  $schema['vef_video_styles'] = array(
-    'description' => 'Stores video embed styles.',
-    'export' => array(
-      'key' => 'name',
-      'identifier' => 'video_embed_style',
-      'default hook' => 'default_video_embed_styles',
-      'api' => array(
-        'owner' => 'video_embed_field',
-        'api' => 'default_video_embed_styles',
-        'minimum_version' => 1,
-        'current_version' => 1,
-      ),
-    ),
-    'fields' => array(
-      'name' => array(
-        'description' => 'The machine-readable option set name.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-      ),
-      'title' => array(
-        'description' => 'The human-readable title for this option set.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-      ),
-      'data' => array(
-        'description' => 'The configuration data for the style.',
-        'type' => 'blob',
-        'size' => 'big',
-        'not null' => TRUE,
-        'serialize' => TRUE,
-      ),
-    ),
-    'primary key' => array('name'),
-  );
-  return $schema;
-}
-
-/**
  * Implements hook_update_last_removed().
  */
 function modulename_update_last_removed() {
@@ -114,4 +66,26 @@ function video_embed_field_update_1000() {
 
   // Delete variables.
   update_variable_del('video_embed_field_youtube_v3_api_key');
+
+  // Convert existing styles to CMI.
+  $settings = db_query('SELECT name, title, data FROM {vef_video_styles}');
+  foreach ($settings as $setting) {
+    $setting_array = unserialize($setting->data);
+    $config = config('video_embed_field.video_style.' . $setting->name);
+    $config->set('module', 'video_embed_field');
+    $config->set('preset_type', 'video_style');
+    $config->set('title', $setting->title);
+    $config->set('machine_name', $setting->name);
+    $config->set('data', $setting_array);
+    $config->save();
+  }
+}
+
+/**
+ * Remove database table for VEF styles since it is in config now.
+ */
+function video_embed_field_update_1001() {
+  if (db_table_exists('vef_video_styles')) {
+    db_drop_table('vef_video_styles');
+  }
 }
