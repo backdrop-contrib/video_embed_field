@@ -94,8 +94,8 @@ function video_embed_field_menu() {
   );
 
   $items['admin/config/media/vef/settings'] = array(
-    'title' => 'Settings',
-    'description' => 'Video Embed Field module settings',
+    'title' => 'Video Embed Field',
+    'description' => 'Add a Youtube v3 API key, if desired',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('video_embed_field_settings_form'),
     'file' => 'video_embed_field.admin.inc',
@@ -743,7 +743,7 @@ function video_embed_field_preset_types() {
       'name' => 'Video style',
       'name_plural' => 'Video styles',
       'path' => 'admin/config/media/vef',
-      'path_title' => 'Video Embed styles',
+      'path_title' => 'Video Embed Field styles',
       'path_description' => 'Administer Video Embed Field\'s video styles.',
       'id_name' => 'Style',
       'permission' => 'administer video styles',
