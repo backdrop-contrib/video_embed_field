@@ -464,6 +464,10 @@ function template_preprocess_video_embed_field_embed_code(&$variables) {
 function theme_video_embed_field_colorbox_code($variables) {
   $path = video_embed_field_get_ajax_url($variables['video_url'], $variables['video_style']);
 
+  if (!empty($variables['image_alt'])) {
+    // If description is enabled (=!empty), pass it to Colorbox.
+    $path['options']['attributes']['title'] = $variables['image_alt'];
+  }
   $image = array(
     '#theme' => 'image_formatter',
     '#item' => array('uri' => $variables['image_url'], 'alt' => $variables['image_alt']),
