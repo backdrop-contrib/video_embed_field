@@ -192,7 +192,7 @@ function video_embed_field_handle_youtube($url, $settings) {
   }
 
   // Add class to variable to avoid adding it to URL param string.
-  $class = $settings['class'];
+  $class = isset($settings['class']) ? $settings['class'] : '';
   unset($settings['class']);
 
   // Construct the embed code.
@@ -518,7 +518,7 @@ function video_embed_field_handle_vimeo($url, $settings) {
   unset($settings['froogaloop']);
 
   // Add class to variable to avoid adding it to URL param string.
-  $class = $settings['class'];
+  $class = isset($settings['class']) ? $settings['class'] : '';
   unset($settings['class']);
 
   $settings_str = _video_embed_code_get_settings_str($settings);
