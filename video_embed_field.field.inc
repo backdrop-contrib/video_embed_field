@@ -235,14 +235,14 @@ function video_embed_field_field_presave($entity_type, $entity, $field, $instanc
     if (isset($info['url']) && $info['url']) {
       $thumb_url = $info['url'];
       $thumb_extension = pathinfo($thumb_url, PATHINFO_EXTENSION);
-      $local_path = "public://video_embed_field_thumbnails/{$info['handler']}/{$info['id']}.$thumb_extension";
+      $local_path = file_default_scheme() . "://video_embed_field_thumbnails/{$info['handler']}/{$info['id']}.$thumb_extension";
 
       $dirname = backdrop_dirname($local_path);
       file_prepare_directory($dirname, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
 
       $response = backdrop_http_request($thumb_url);
       if (!isset($response->error)) {
-        file_save_data($response->data, $local_path, FILE_EXISTS_REPLACE);
+        file_unmanaged_save_data($response->data, $local_path, FILE_EXISTS_REPLACE);
       }
       else {
         @copy($thumb_url, $local_path);
