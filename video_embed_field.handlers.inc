@@ -25,6 +25,7 @@ function video_embed_field_video_embed_handler_info() {
     'domains' => array(
       'youtube.com',
       'youtu.be',
+      'm.youtube.com',
     ),
     'defaults' => array(
       'width' => 640,
