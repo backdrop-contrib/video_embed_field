@@ -6,7 +6,7 @@
  */
 
 // The Youtube’s API url.
-define('YT_API_URL', 'http://gdata.youtube.com/feeds/api/videos?q=');
+define('YT_API_URL', 'https://www.youtube.com/feeds/videos.xml?user=backdropcms');
 
 /**
  * Devel generate plugin definition.
@@ -67,12 +67,9 @@ function video_embed_field_generate_videos() {
   if (!isset($videos)) {
     $videos = array();
 
-    // Create random video seed.
-    $video_id = user_password(2);
-
     // Using cURL php extension to make the request to youtube API.
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, YT_API_URL . $video_id);
+    curl_setopt($ch, CURLOPT_URL, YT_API_URL);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     // $feed holds a rss feed xml returned by youtube API.
     $feed = curl_exec($ch);
@@ -80,10 +77,12 @@ function video_embed_field_generate_videos() {
 
     // Using SimpleXML to parse youtube’s feed.
     $xml = simplexml_load_string($feed);
-    foreach ($xml->entry as $entry) {
+    $json = json_encode($xml);
+    $array = json_decode($json, TRUE);
+    foreach ($array['entry'] as $entry) {
       $videos[] = array(
-        'video_url' => $entry->children('media', TRUE)->group->player->attributes()->url,
-        'description' => $entry->title,
+        'video_url' => $entry['link']['@attributes']['href'],
+        'description' => $entry['title'],
       );
     }
     if (empty($videos)) {
