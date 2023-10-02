@@ -64,6 +64,7 @@ function video_embed_field_video_embed_handler_info() {
       'autoplay' => 0,
       'loop' => 0,
       'froogaloop' => 0,
+      'background' => 0,
       'class' => ''
     ),
   );
@@ -645,6 +646,13 @@ function video_embed_field_handler_vimeo_form($defaults) {
     '#title' => t('Enable froogaloop support'),
     '#description' => t("Enables Froogallop Vimeo's library support"),
     '#default_value' => $defaults['loop'],
+  );
+
+  $form['background'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Remove the play/pause button when embedding background videos'),
+    '#description' => t('Functionality only works for plus or pro members. Works by appending background=1 parameter to the end of the player URL in your embed code.'),
+    '#default_value' => $defaults['background'],
   );
 
   $form['class'] = array(
