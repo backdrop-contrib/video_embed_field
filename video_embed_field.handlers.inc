@@ -536,7 +536,7 @@ function video_embed_field_handle_vimeo($url, $settings) {
 
   $settings_str = _video_embed_code_get_settings_str($settings);
 
-  $title = !empty($vimeo_data) ? ' title="' . t('Vimeo video') . ': ' . check_plain($vimeo_data['title']) . '"' : ' title="' . t('Vimeo video') . '"';
+  $title = !empty($vimeo_data['title']) ? ' title="' . t('Vimeo video') . ': ' . check_plain($vimeo_data['title']) . '"' : ' title="' . t('Vimeo video') . '"';
 
   return array(
     '#markup' => '<iframe' . $title . ' class="' . check_plain($class) . '" id="' . $settings['player_id'] . '" width="' . check_plain($settings['width']) . '" height="' . check_plain($settings['height']) . '" src="//player.vimeo.com/video/' . $id .
