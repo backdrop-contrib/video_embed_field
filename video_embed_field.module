@@ -67,8 +67,8 @@ function video_embed_field_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['admin/config/media/vef/settings'] = array(
-    'title' => 'Video Embed Field',
+  $items['admin/config/media/vef-settings'] = array(
+    'title' => 'Video Embed Field Settings',
     'description' => 'Add a Youtube v3 API key, if desired',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('video_embed_field_settings_form'),
