@@ -489,8 +489,10 @@ function video_embed_field_get_video_data($url) {
   $handler = video_embed_get_handler($url);
   if ($handler && isset($handler['data_function']) && function_exists($handler['data_function'])) {
     $data = call_user_func($handler['data_function'], $url);
-    $data['handler'] = $handler['name'];
-    return $data;
+    if ($data && is_array($data)) {
+      $data['handler'] = $handler['name'];
+      return $data;
+    }
   }
   return FALSE;
 }
