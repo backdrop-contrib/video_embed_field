@@ -68,13 +68,13 @@ function video_embed_field_menu() {
   );
 
   $items['admin/config/media/vef/settings'] = array(
-    'title' => 'Video Embed Field',
-    'description' => 'Add a Youtube v3 API key, if desired',
+    'title' => 'Settings',
+    'description' => 'Video Embed Field settings',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('video_embed_field_settings_form'),
     'file' => 'video_embed_field.admin.inc',
     'access arguments' => array('administer video styles'),
-    'type' => MENU_NORMAL_ITEM,
+    'type' => MENU_LOCAL_TASK,
   );
 
   return $items;
@@ -373,7 +373,7 @@ function video_embed_field_filter_process($text, $filter, $format) {
  *   Contains the following information:
  *    - $url
  *    - $style
- *    - $video_data
+ *    - $video_data.
  *
  * @see video-embed.tpl.php
  */
@@ -706,7 +706,7 @@ function _video_embed_field_hash($video_url, $video_style) {
  */
 function video_embed_field_autoload_info() {
   return array(
-    'views_embed_field_views_handler_field_thumbnail_path' => 'views/handlers/views_embed_field_views_handler_field_thumbnail_path.inc'
+    'views_embed_field_views_handler_field_thumbnail_path' => 'views/handlers/views_embed_field_views_handler_field_thumbnail_path.inc',
   );
 }
 
@@ -719,7 +719,7 @@ function video_embed_field_preset_types() {
       'name' => 'Video style',
       'name_plural' => 'Video styles',
       'path' => 'admin/config/media/vef',
-      'path_title' => 'Video Embed Field styles',
+      'path_title' => 'Video Embed Field',
       'path_description' => 'Administer Video Embed Field\'s video styles.',
       'id_name' => 'Style',
       'permission' => 'administer video styles',
@@ -763,10 +763,10 @@ function video_embed_field_config_info() {
     'group' => t('Configuration'),
   );
   $prefixes['video_embed_field.video_style'] = array(
-      'name_key' => 'machine_name',
-      'label_key' => 'title',
-      'group' => t('Video styles'),
-    );
+    'name_key' => 'machine_name',
+    'label_key' => 'title',
+    'group' => t('Video styles'),
+  );
 
   return $prefixes;
 }
