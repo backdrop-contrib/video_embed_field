@@ -192,7 +192,8 @@ function video_embed_field_field_validate($entity_type, $entity, $field, $instan
     if (!empty($item['video_url'])) {
       $item['video_url'] = trim($item['video_url']);
       if (stristr($item['video_url'], '.') && !stristr($item['video_url'], 'http://') && !stristr($item['video_url'], 'https://')) {
-        $item['video_url'] = 'http://' . $item['video_url'];
+        $protocol = backdrop_is_https() ? 'https://' : 'http://';
+        $item['video_url'] = $protocol . $item['video_url'];
       }
 
       $parts = parse_url($item['video_url']);
@@ -487,7 +488,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
         if ($display['settings']['image_link'] == 'source') {
           if ($ret = parse_url($item['video_url'])) {
             if (!isset($ret["scheme"])) {
-              $item['video_url'] = "http://{$item['video_url']}";
+              $item['video_url'] = "https://{$item['video_url']}";
             }
           }
           $path = array(
@@ -503,7 +504,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
           '#path' => isset($path) ? $path : '',
         );
       }
-      // Incase no thumbnail was downloaded/provider doesn't support thumbnails.
+      // In case no thumbnail was downloaded/provider doesn't support thumbnails.
       else {
         $element[$delta] = array();
       }
@@ -512,7 +513,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
       if (isset($item['thumbnail_path'])) {
         if ($ret = parse_url($item['video_url'])) {
           if (!isset($ret["scheme"])) {
-            $item['video_url'] = "http://{$item['video_url']}";
+            $item['video_url'] = "https://{$item['video_url']}";
           }
         }
         $element[$delta] = array(
