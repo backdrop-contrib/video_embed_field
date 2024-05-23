@@ -487,14 +487,14 @@ function video_embed_field_thumbnail_url($url) {
  */
 function video_embed_field_get_video_data($url) {
   $handler = video_embed_get_handler($url);
-  if ($handler && isset($handler['data_function']) && function_exists($handler['data_function'])) {
+  $data = FALSE;
+  if ($handler && isset($handler['name'], $handler['data_function']) && function_exists($handler['data_function'])) {
     $data = call_user_func($handler['data_function'], $url);
     if ($data && is_array($data)) {
       $data['handler'] = $handler['name'];
-      return $data;
     }
   }
-  return FALSE;
+  return $data;
 }
 
 /**
