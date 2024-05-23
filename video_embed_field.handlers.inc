@@ -596,7 +596,7 @@ function video_embed_field_handle_vimeo_thumbnail($url) {
   );
 
   try {
-    $info['url'] = $vimeo_data['thumbnail_url'];
+    $info['url'] = (!empty($vimeo_data['thumbnail_url'])) ? $vimeo_data['thumbnail_url'] : '';
   } catch (Exception $e) {
 
   }
