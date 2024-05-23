@@ -463,21 +463,54 @@ function video_embed_field_handler_youtube_form_validate($element, &$form_state,
  * @param string $url
  *   A Vimeo video URL to get the data from.
  *
- * @return integer|false
- *   The video's data attributes, or FALSE if unable to get the video ID.
+* @return array|false
+*   An array containing "video_id" and "thumbnail_url", or FALSE if unable to
+*   get the video data.
  */
 function _video_embed_field_get_vimeo_data($url) {
-  // Set oembed endpoint.
-  $oembed_endpoint = 'https://vimeo.com/api/oembed';
-  // Fetch vimeo data.
-  $options = array('headers' => array('Referer' => $_SERVER['HTTP_REFERER']));
-  $response = backdrop_http_request($oembed_endpoint . '.json?url=' . rawurlencode($url), $options);
+  $return = array();
+  $access_token = config_get('video_embed_field.settings', 'vimeo_access_token');
 
-  try {
-    return json_decode($response->data, TRUE);
-  } catch (Exception $e) {
-    return FALSE;
+  // If we have an access token, search for the video via the API.
+  if (!empty($access_token)) {
+    $response = backdrop_http_request('https://api.vimeo.com/videos?links=' . rawurlencode($url), array(
+      'headers' => array(
+        'Authorization' => 'bearer ' . $access_token,
+      ),
+    ));
+
+    // Strip the video ID from the URI and find the largest thumbnail.
+    if (!empty($data['data'][0])) {
+      $return['video_id'] = str_replace('/videos/', '', $data['data'][0]['uri']);
+      $largest = 0;
+      foreach ($data['data'][0]['pictures']['sizes'] as $picture) {
+        if (($picture['width'] * $picture['height']) > $largest) {
+          $largest = $picture['width'] * $picture['height'];
+          $return['thumbnail_url'] = $picture['link'];
+        }
+      }
+    }
   }
+  // If we don't have an access token, get video details via oEmbed.
+  else {
+    $response = backdrop_http_request('https://vimeo.com/api/oembed.json?url=' . rawurlencode($url), array(
+      'headers' => array(
+        'Referer' => $_SERVER['HTTP_REFERER'],
+      ),
+    ));
+
+    try {
+      $data = json_decode($response->data, TRUE);
+    }
+    catch (Exception $e) {
+      return FALSE;
+    }
+
+    $return['video_id'] = !empty($data['video_id']) ? $data['video_id'] : FALSE;
+    $return['thumbnail_url'] = !empty($data['thumbnail_url']) ? $data['thumbnail_url'] : '';
+  }
+
+  return !empty($return['video_id']) ? $return : FALSE;
 }
 
 /**

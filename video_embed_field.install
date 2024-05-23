@@ -62,6 +62,7 @@ function video_embed_field_update_1000() {
   // Migrate variables to config.
   $config = config('video_embed_field.settings');
   $config->set('youtube_v3_api_key', update_variable_get('video_embed_field_youtube_v3_api_key', ''));
+  $config->set('vimeo_access_token', update_variable_get('video_embed_field_vimeo_access_token', ''));
   $config->save();
 
   // Delete variables.
