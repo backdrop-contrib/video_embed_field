@@ -523,7 +523,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
             '#image_alt' => $alt,
             '#video_url' => $item['video_url'],
             '#video_style' => $display['settings']['video_style'],
-            '#video_data' => unserialize($item['video_data']),
+            '#video_data' => !empty($item['video_data']) ? unserialize($item['video_data']) : array(),
           ),
         );
       }
