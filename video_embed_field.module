@@ -214,7 +214,8 @@ function video_embed_get_handlers() {
 function video_embed_get_handler($url) {
   // Process video URL.
   if (!stristr($url, 'http://') && !stristr($url, 'https://')) {
-    $url = 'http://' . $url;
+    $protocol = backdrop_is_https() ? 'https://' : 'http://';
+    $url = $protocol . $url;
   }
   $parts = parse_url($url);
   if (!isset($parts['host'])) {
@@ -320,7 +321,7 @@ function video_embed_field_video_style_options($include_empty = TRUE) {
 function video_embed_field_filter_info() {
   $filters['video_embed_field'] = array(
     'title' => t('Video Embedding'),
-    'description' => t('Replaces [VIDEO::http://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.'),
+    'description' => t('Replaces [VIDEO::https://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.'),
     'process callback' => 'video_embed_field_filter_process',
     'tips callback' => '_filter_video_embed_tips',
   );
@@ -336,7 +337,7 @@ function video_embed_field_filter_info() {
  * @see filter_filter_info()
  */
 function _filter_video_embed_tips($filter, $format, $long = FALSE) {
-  return t('Replaces [VIDEO::http://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.');
+  return t('Replaces [VIDEO::https://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.');
 }
 
 /**
@@ -397,8 +398,9 @@ function template_preprocess_video_embed_field_embed_code(&$variables) {
   }
 
   // Prepare the URL.
-  if (!stristr($variables['url'], 'http://') && !stristr($variables['url'], 'https://')) {
-    $variables['url'] = 'http://' . $variables['url'];
+  if (!empty($variables['url']) && !stristr($variables['url'], 'http://') && !stristr($variables['url'], 'https://')) {
+    $protocol = backdrop_is_https() ? 'https://' : 'http://';
+    $variables['url'] = $protocol . $variables['url'];
   }
 
   // Prepare embed code.

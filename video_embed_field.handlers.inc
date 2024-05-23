@@ -7,7 +7,6 @@
  * handlers.
  */
 
-
 /**
  * Implements hook_video_embed_handler_info().
  */
@@ -67,7 +66,7 @@ function video_embed_field_video_embed_handler_info() {
       'loop' => 0,
       'froogaloop' => 0,
       'background' => 0,
-      'class' => ''
+      'class' => '',
     ),
   );
 
@@ -170,11 +169,11 @@ function _video_embed_field_get_youtube_id($url) {
 function video_embed_field_handle_youtube($url, $settings) {
   $output = array();
 
-  if(preg_match('/#t=((?P<min>\d+)m)?((?P<sec>\d+)s)?((?P<tinsec>\d+))?/', $url, $matches)){
-    if(isset($matches['tinsec'])){
-      $settings['start'] = $matches['tinsec']; // url already in form #t=125 for 2 minutes and 5 seconds
+  if (preg_match('/#t=((?P<min>\d+)m)?((?P<sec>\d+)s)?((?P<tinsec>\d+))?/', $url, $matches)) {
+    if (isset($matches['tinsec'])) {
+      $settings['start'] = $matches['tinsec']; // Url already in form #t=125 for 2 minutes and 5 seconds.
     } else {
-      // url in form #t=2m5s or with other useless data, this is why we still keep adding the default data..
+      // Url in form #t=2m5s or with other useless data, this is why we still keep adding the default data..
       // give it some default data in case there is no #t=...
       $matches += array(
         "min" => 0,
@@ -234,10 +233,10 @@ function video_embed_field_handle_youtube_thumbnail($url) {
     $id = substr($id, $start, $length);
     $info['id'] = $id;
     // Playlist info is stored in XML. The thumbnail is in there.
-    $xml = backdrop_http_request('http://gdata.youtube.com/feeds/api/playlists/' . $id);
+    $xml = backdrop_http_request('https://gdata.youtube.com/feeds/api/playlists/' . $id);
     if (!isset($xml->error)) {
       $xml = new SimpleXMLElement($xml->data);
-      $media = $xml->children('http://search.yahoo.com/mrss/');
+      $media = $xml->children('https://search.yahoo.com/mrss/');
       if ($media->group->thumbnail && $media->group->thumbnail[0]->attributes()) {
         $attrs = $media->group->thumbnail[0]->attributes();
         $info['url'] = (string) $attrs['url'];
@@ -247,7 +246,7 @@ function video_embed_field_handle_youtube_thumbnail($url) {
   // Regular video.
   elseif ($id) {
     $info['id'] = $id;
-    $info['url'] = 'http://img.youtube.com/vi/' . $id . '/0.jpg';
+    $info['url'] = 'https://img.youtube.com/vi/' . $id . '/0.jpg';
   }
   return $info;
 }
@@ -256,7 +255,7 @@ function video_embed_field_handle_youtube_thumbnail($url) {
  * Gets video data for a YouTube video URL.
  *
  * @param string $url
- *   A YouTube video URL to get data for
+ *   A YouTube video URL to get data for.
  *
  * @return array|bool
  *   An array of video data, or FALSE if unable to fetch data
@@ -468,9 +467,9 @@ function video_embed_field_handler_youtube_form_validate($element, &$form_state,
  *   The video's data attributes, or FALSE if unable to get the video ID.
  */
 function _video_embed_field_get_vimeo_data($url) {
-  // Set oembed endpoint
-  $oembed_endpoint = 'http://vimeo.com/api/oembed';
-  // Fetch vimeo data
+  // Set oembed endpoint.
+  $oembed_endpoint = 'https://vimeo.com/api/oembed';
+  // Fetch vimeo data.
   $options = array('headers' => array('Referer' => $_SERVER['HTTP_REFERER']));
   $response = backdrop_http_request($oembed_endpoint . '.json?url=' . rawurlencode($url), $options);
 
