@@ -492,7 +492,7 @@ function _video_embed_field_get_vimeo_data($url) {
  */
 function _video_embed_field_get_vimeo_id($vimeo_data) {
   try {
-    $video_id = $vimeo_data['video_id'];
+    $video_id = check_plain($vimeo_data['video_id']);
   } catch (Exception $e) {
     $video_id = FALSE;
   }
