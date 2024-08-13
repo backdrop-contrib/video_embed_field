@@ -39,8 +39,8 @@ function video_embed_field_property_info_callback(&$info, $entity_type, $field, 
   $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
   $property['type'] = ($field['cardinality'] != 1) ? 'list<video_embed_field>' : 'video_embed_field';
   $property['property info'] = video_embed_field_data_property_info('Video embed');
-  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
-  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+  $property['getter callback'] = 'entity_plus_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_plus_metadata_field_verbatim_set';
 }
 
 /**
