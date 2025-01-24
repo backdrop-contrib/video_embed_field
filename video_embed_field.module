@@ -68,13 +68,13 @@ function video_embed_field_menu() {
   );
 
   $items['admin/config/media/vef/settings'] = array(
-    'title' => 'Video Embed Field',
-    'description' => 'Add a Youtube v3 API key, if desired',
+    'title' => 'Settings',
+    'description' => 'Video Embed Field settings',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('video_embed_field_settings_form'),
     'file' => 'video_embed_field.admin.inc',
     'access arguments' => array('administer video styles'),
-    'type' => MENU_NORMAL_ITEM,
+    'type' => MENU_LOCAL_TASK,
   );
 
   return $items;
@@ -214,7 +214,8 @@ function video_embed_get_handlers() {
 function video_embed_get_handler($url) {
   // Process video URL.
   if (!stristr($url, 'http://') && !stristr($url, 'https://')) {
-    $url = 'http://' . $url;
+    $protocol = backdrop_is_https() ? 'https://' : 'http://';
+    $url = $protocol . $url;
   }
   $parts = parse_url($url);
   if (!isset($parts['host'])) {
@@ -320,7 +321,7 @@ function video_embed_field_video_style_options($include_empty = TRUE) {
 function video_embed_field_filter_info() {
   $filters['video_embed_field'] = array(
     'title' => t('Video Embedding'),
-    'description' => t('Replaces [VIDEO::http://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.'),
+    'description' => t('Replaces [VIDEO::https://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.'),
     'process callback' => 'video_embed_field_filter_process',
     'tips callback' => '_filter_video_embed_tips',
   );
@@ -336,7 +337,7 @@ function video_embed_field_filter_info() {
  * @see filter_filter_info()
  */
 function _filter_video_embed_tips($filter, $format, $long = FALSE) {
-  return t('Replaces [VIDEO::http://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.');
+  return t('Replaces [VIDEO::https://www.youtube.com/watch?v=someVideoID::aVideoStyle] tags with embedded videos.');
 }
 
 /**
@@ -373,7 +374,7 @@ function video_embed_field_filter_process($text, $filter, $format) {
  *   Contains the following information:
  *    - $url
  *    - $style
- *    - $video_data
+ *    - $video_data.
  *
  * @see video-embed.tpl.php
  */
@@ -397,7 +398,7 @@ function template_preprocess_video_embed_field_embed_code(&$variables) {
     }
 
     // Prepare the URL.
-    if (!empty($variables['url']) && !stristr($variables['url'], 'http://') && !stristr($variables['url'], 'https://')) {
+    if (!stristr($variables['url'], 'http://') && !stristr($variables['url'], 'https://')) {
       $protocol = backdrop_is_https() ? 'https://' : 'http://';
       $variables['url'] = $protocol . $variables['url'];
     }
@@ -489,12 +490,14 @@ function video_embed_field_thumbnail_url($url) {
  */
 function video_embed_field_get_video_data($url) {
   $handler = video_embed_get_handler($url);
-  if ($handler && isset($handler['data_function']) && function_exists($handler['data_function'])) {
+  $data = FALSE;
+  if ($handler && isset($handler['name'], $handler['data_function']) && function_exists($handler['data_function'])) {
     $data = call_user_func($handler['data_function'], $url);
-    $data['handler'] = $handler['name'];
-    return $data;
+    if ($data && is_array($data)) {
+      $data['handler'] = $handler['name'];
+    }
   }
-  return FALSE;
+  return $data;
 }
 
 /**
@@ -719,7 +722,7 @@ function video_embed_field_preset_types() {
       'name' => 'Video style',
       'name_plural' => 'Video styles',
       'path' => 'admin/config/media/vef',
-      'path_title' => 'Video Embed Field styles',
+      'path_title' => 'Video Embed Field',
       'path_description' => 'Administer Video Embed Field\'s video styles.',
       'id_name' => 'Style',
       'permission' => 'administer video styles',

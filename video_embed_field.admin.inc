@@ -36,11 +36,17 @@ function video_embed_field_video_style_form(&$form, &$form_state) {
  * VEF settings page form callback.
  */
 function video_embed_field_settings_form($form, &$form_state) {
+  $config = config('video_embed_field.settings');
   $form['#config'] = 'video_embed_field.settings';
   $form['youtube_v3_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Youtube v3 API key'),
-    '#default_value' => config_get('video_embed_field.settings', 'youtube_v3_api_key'),
+    '#default_value' => $config->get('youtube_v3_api_key'),
+  );
+  $form['video_embed_field_vimeo_access_token'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Vimeo app access token'),
+    '#default_value' => $config->get('vimeo_access_token'),
   );
   return system_settings_form($form);
 }

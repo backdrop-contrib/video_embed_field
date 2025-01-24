@@ -7,7 +7,6 @@
  * handlers.
  */
 
-
 /**
  * Implements hook_video_embed_handler_info().
  */
@@ -67,7 +66,7 @@ function video_embed_field_video_embed_handler_info() {
       'loop' => 0,
       'froogaloop' => 0,
       'background' => 0,
-      'class' => ''
+      'class' => '',
     ),
   );
 
@@ -170,11 +169,11 @@ function _video_embed_field_get_youtube_id($url) {
 function video_embed_field_handle_youtube($url, $settings) {
   $output = array();
 
-  if(preg_match('/#t=((?P<min>\d+)m)?((?P<sec>\d+)s)?((?P<tinsec>\d+))?/', $url, $matches)){
-    if(isset($matches['tinsec'])){
-      $settings['start'] = $matches['tinsec']; // url already in form #t=125 for 2 minutes and 5 seconds
+  if (preg_match('/#t=((?P<min>\d+)m)?((?P<sec>\d+)s)?((?P<tinsec>\d+))?/', $url, $matches)) {
+    if (isset($matches['tinsec'])) {
+      $settings['start'] = $matches['tinsec']; // Url already in form #t=125 for 2 minutes and 5 seconds.
     } else {
-      // url in form #t=2m5s or with other useless data, this is why we still keep adding the default data..
+      // Url in form #t=2m5s or with other useless data, this is why we still keep adding the default data..
       // give it some default data in case there is no #t=...
       $matches += array(
         "min" => 0,
@@ -234,10 +233,10 @@ function video_embed_field_handle_youtube_thumbnail($url) {
     $id = substr($id, $start, $length);
     $info['id'] = $id;
     // Playlist info is stored in XML. The thumbnail is in there.
-    $xml = backdrop_http_request('http://gdata.youtube.com/feeds/api/playlists/' . $id);
+    $xml = backdrop_http_request('https://gdata.youtube.com/feeds/api/playlists/' . $id);
     if (!isset($xml->error)) {
       $xml = new SimpleXMLElement($xml->data);
-      $media = $xml->children('http://search.yahoo.com/mrss/');
+      $media = $xml->children('https://search.yahoo.com/mrss/');
       if ($media->group->thumbnail && $media->group->thumbnail[0]->attributes()) {
         $attrs = $media->group->thumbnail[0]->attributes();
         $info['url'] = (string) $attrs['url'];
@@ -247,7 +246,7 @@ function video_embed_field_handle_youtube_thumbnail($url) {
   // Regular video.
   elseif ($id) {
     $info['id'] = $id;
-    $info['url'] = 'http://img.youtube.com/vi/' . $id . '/0.jpg';
+    $info['url'] = 'https://img.youtube.com/vi/' . $id . '/0.jpg';
   }
   return $info;
 }
@@ -256,7 +255,7 @@ function video_embed_field_handle_youtube_thumbnail($url) {
  * Gets video data for a YouTube video URL.
  *
  * @param string $url
- *   A YouTube video URL to get data for
+ *   A YouTube video URL to get data for.
  *
  * @return array|bool
  *   An array of video data, or FALSE if unable to fetch data
@@ -464,21 +463,54 @@ function video_embed_field_handler_youtube_form_validate($element, &$form_state,
  * @param string $url
  *   A Vimeo video URL to get the data from.
  *
- * @return integer|false
- *   The video's data attributes, or FALSE if unable to get the video ID.
+* @return array|false
+*   An array containing "video_id" and "thumbnail_url", or FALSE if unable to
+*   get the video data.
  */
 function _video_embed_field_get_vimeo_data($url) {
-  // Set oembed endpoint
-  $oembed_endpoint = 'http://vimeo.com/api/oembed';
-  // Fetch vimeo data
-  $options = array('headers' => array('Referer' => $_SERVER['HTTP_REFERER']));
-  $response = backdrop_http_request($oembed_endpoint . '.json?url=' . rawurlencode($url), $options);
+  $return = array();
+  $access_token = config_get('video_embed_field.settings', 'vimeo_access_token');
 
-  try {
-    return json_decode($response->data, TRUE);
-  } catch (Exception $e) {
-    return FALSE;
+  // If we have an access token, search for the video via the API.
+  if (!empty($access_token)) {
+    $response = backdrop_http_request('https://api.vimeo.com/videos?links=' . rawurlencode($url), array(
+      'headers' => array(
+        'Authorization' => 'bearer ' . $access_token,
+      ),
+    ));
+
+    // Strip the video ID from the URI and find the largest thumbnail.
+    if (!empty($data['data'][0])) {
+      $return['video_id'] = str_replace('/videos/', '', $data['data'][0]['uri']);
+      $largest = 0;
+      foreach ($data['data'][0]['pictures']['sizes'] as $picture) {
+        if (($picture['width'] * $picture['height']) > $largest) {
+          $largest = $picture['width'] * $picture['height'];
+          $return['thumbnail_url'] = $picture['link'];
+        }
+      }
+    }
   }
+  // If we don't have an access token, get video details via oEmbed.
+  else {
+    $response = backdrop_http_request('https://vimeo.com/api/oembed.json?url=' . rawurlencode($url), array(
+      'headers' => array(
+        'Referer' => $_SERVER['HTTP_REFERER'],
+      ),
+    ));
+
+    try {
+      $data = json_decode($response->data, TRUE);
+    }
+    catch (Exception $e) {
+      return FALSE;
+    }
+
+    $return['video_id'] = !empty($data['video_id']) ? $data['video_id'] : FALSE;
+    $return['thumbnail_url'] = !empty($data['thumbnail_url']) ? $data['thumbnail_url'] : '';
+  }
+
+  return !empty($return['video_id']) ? $return : FALSE;
 }
 
 /**
@@ -492,7 +524,7 @@ function _video_embed_field_get_vimeo_data($url) {
  */
 function _video_embed_field_get_vimeo_id($vimeo_data) {
   try {
-    $video_id = $vimeo_data['video_id'];
+    $video_id = check_plain($vimeo_data['video_id']);
   } catch (Exception $e) {
     $video_id = FALSE;
   }
@@ -564,7 +596,7 @@ function video_embed_field_handle_vimeo_thumbnail($url) {
   );
 
   try {
-    $info['url'] = $vimeo_data['thumbnail_url'];
+    $info['url'] = (!empty($vimeo_data['thumbnail_url'])) ? $vimeo_data['thumbnail_url'] : '';
   } catch (Exception $e) {
 
   }

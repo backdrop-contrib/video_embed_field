@@ -95,7 +95,7 @@ function your_module_handle_ustream($url, $settings) {
 function your_module_handle_ustream_thumbnail($url) {
   return array(
     'id' => '12332243242', //generally the id that the provider uses for the video
-    'url' => 'http://something/thumbnail/somthing.jpg', //the url of the thumbnail
+    'url' => 'https://something/thumbnail/something.jpg', //the url of the thumbnail
   );
 }
 
@@ -105,7 +105,7 @@ function your_module_handle_ustream_thumbnail($url) {
  *                       with empty values filled with the defaults provided in info hook
  * @return a form as defined by forms api
  *
- * @see http://api.drupal.org/api/drupal/developer!topics!forms_api_reference.html/7
+ * @see https://api.drupal.org/api/drupal/developer!topics!forms_api_reference.html/7
  */
 function your_module_handler_ustream_form($defaults) {
   $form = array();
