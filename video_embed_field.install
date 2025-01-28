@@ -51,7 +51,7 @@ function video_embed_field_field_schema($field) {
 /**
  * Implements hook_update_last_removed().
  */
-function modulename_update_last_removed() {
+function video_embed_field_update_last_removed() {
   return 7010;
 }
 
