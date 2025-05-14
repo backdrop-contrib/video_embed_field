@@ -53,7 +53,7 @@ function video_embed_field_set_target($source, $entity, $target, $value) {
   $field = isset($entity->$field_name) ? $entity->$field_name : array(LANGUAGE_NONE => array());
 
   // Allow for multiple mappings to the same target.
-  $field[LANGUAGE_NONE] = !empty($entity->{$field_name}[LANGUAGE_NONE]) ? $field[LANGUAGE_NONE] : [[]];
+  $field[LANGUAGE_NONE] = $field[LANGUAGE_NONE] ?? [];
 
   $count = [];
   foreach ($field[LANGUAGE_NONE] as $delta => $item) {
