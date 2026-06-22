@@ -452,7 +452,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
 
   foreach ($items as $delta => $item) {
     // Create the render array for the description.
-    if (isset($item['description']) && $item['description'] && $settings['description'] && $instance['settings']['description_field']) {
+    if ($item['description'] ?? FALSE && $settings['description'] ?? FALSE && $instance['settings']['description_field'] ?? FALSE) {
       $description = array(
         '#prefix' => '<div class="video-embed-description">',
         '#markup' => check_plain($item['description']),
