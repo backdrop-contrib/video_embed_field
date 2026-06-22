@@ -514,19 +514,19 @@ function _video_embed_field_get_vimeo_data($url) {
 }
 
 /**
- * Helper function to get the Vimeo video's data attributes.
+ * Helper function to get the Vimeo video's ID.
  *
- * @param string $url
- *   A Vimeo video URL to get the ID of.
+ * @param array $vimeo_data
+ *   A Vimeo data array to check for the video ID.
  *
- * @return integer|false
- *   The video ID, or FALSE if unable to get the video ID.
+ * @return integer
+ *   The video ID, or 0 if unable to get the video ID.
  */
 function _video_embed_field_get_vimeo_id($vimeo_data) {
   try {
-    $video_id = check_plain($vimeo_data['video_id']);
+    $video_id = (int) check_plain($vimeo_data['video_id'] ?? 0);
   } catch (Exception $e) {
-    $video_id = FALSE;
+    $video_id = 0;
   }
 
   return $video_id;
@@ -596,7 +596,7 @@ function video_embed_field_handle_vimeo_thumbnail($url) {
   );
 
   try {
-    $info['url'] = (!empty($vimeo_data['thumbnail_url'])) ? $vimeo_data['thumbnail_url'] : '';
+    $info['url'] = $vimeo_data['thumbnail_url'] ?? '';
   } catch (Exception $e) {
 
   }
